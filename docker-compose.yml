@@ -1,8 +1,8 @@
 services:
-  fakeratio:
+  jokerseed:
     build: .
-    image: fakeratio:latest
-    container_name: fakeratio
+    image: jokerseed:latest
+    container_name: jokerseed
     restart: unless-stopped
     network_mode: host
     volumes:
