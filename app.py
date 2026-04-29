@@ -142,6 +142,7 @@ def _default_config() -> dict:
         'proxy':             '',
         'max_ratio':         5.0,
         'lifetime_uploaded': 0,
+        'disable_idle':      False,
     }
 
 def load_config() -> dict:
@@ -365,8 +366,9 @@ def stats_updater_loop():
         try:
             time.sleep(interval)
             with lock:
-                mn, mx    = config['min_rate'], config['max_rate']
-                max_ratio = config.get('max_ratio', 5.0)
+                mn, mx       = config['min_rate'], config['max_rate']
+                max_ratio    = config.get('max_ratio', 5.0)
+                disable_idle = config.get('disable_idle', False)
                 now       = time.time()
                 for s in list(sessions.values()):
                     if s['status'] != 'seeding' or s.get('paused'):
@@ -380,18 +382,19 @@ def stats_updater_loop():
                         s['speed']     = spd
                         continue
 
-                    if now < s.get('_idle_until', 0):
-                        spd = round(random.uniform(0, 30), 1)
-                        s['uploaded'] += int(spd * 1024 * interval)
-                        s['speed']     = spd
-                        continue
+                    if not disable_idle:
+                        if now < s.get('_idle_until', 0):
+                            spd = round(random.uniform(0, 30), 1)
+                            s['uploaded'] += int(spd * 1024 * interval)
+                            s['speed']     = spd
+                            continue
 
-                    if random.random() < 0.001:
-                        s['_idle_until'] = now + random.uniform(300, 1800)
-                        spd = round(random.uniform(0, 30), 1)
-                        s['uploaded'] += int(spd * 1024 * interval)
-                        s['speed']     = spd
-                        continue
+                        if random.random() < 0.001:
+                            s['_idle_until'] = now + random.uniform(300, 1800)
+                            spd = round(random.uniform(0, 30), 1)
+                            s['uploaded'] += int(spd * 1024 * interval)
+                            s['speed']     = spd
+                            continue
 
                     cur = s['speed'] if mn <= s['speed'] <= mx else random.uniform(mn, mx)
                     new = cur + cur * random.uniform(-0.08, 0.08)

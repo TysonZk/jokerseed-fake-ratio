@@ -959,6 +959,15 @@ body {
           <span class="hint">Laisser vide pour connexion directe / WireGuard</span>
         </div>
         <div class="field full">
+          <label>Périodes d'inactivité</label>
+          <label class="toggle" style="margin-top:5px">
+            <input type="checkbox" id="c-disable-idle">
+            <span class="toggle-track"><span class="toggle-thumb"></span></span>
+            <span class="toggle-lbl">Désactiver les chutes de vitesse à ~0–30 KB/s</span>
+          </label>
+          <span class="hint" style="margin-top:6px">Par défaut, la vitesse chute aléatoirement pour simuler des périodes sans leechers. Cocher pour rester en permanence à pleine vitesse.</span>
+        </div>
+        <div class="field full">
           <label>Plafond de ratio (anti-ban)</label>
           <label class="toggle" style="margin-top:5px">
             <input type="checkbox" id="c-ratio-en" onchange="toggleRatio()">
@@ -1074,6 +1083,7 @@ async function loadCfg() {
   sel.value = cfg.client
   _maxRate  = cfg.max_rate
   _maxRatio = cfg.max_ratio
+  document.getElementById('c-disable-idle').checked = !!cfg.disable_idle
   const ratioEn = cfg.max_ratio > 0
   document.getElementById('c-ratio-en').checked = ratioEn
   document.getElementById('c-ratio').value = ratioEn ? cfg.max_ratio : 5
@@ -1098,6 +1108,7 @@ async function saveCfg() {
     max_ratio:     document.getElementById('c-ratio-en').checked
                      ? +document.getElementById('c-ratio').value
                      : 0,
+    disable_idle:  document.getElementById('c-disable-idle').checked,
   }
   _maxRate  = body.max_rate
   _maxRatio = body.max_ratio
