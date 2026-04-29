@@ -601,6 +601,13 @@ body {
 .idx-info { flex: 1; min-width: 0; }
 .idx-name { font-size: 13px; font-weight: 600; color: var(--tx); }
 .idx-url  { font-size: 11px; color: var(--tx3); margin-top: 2px; }
+.idx-ratio {
+  display: flex; flex-direction: column; align-items: flex-end; gap: 2px;
+  min-width: 90px; text-align: right;
+}
+.idx-ratio-val { font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.idx-ratio-lbl { font-size: 10px; color: var(--tx3); }
+.idx-ratio-sub { font-size: 10px; color: var(--tx3); }
 .btn-search {
   display: inline-flex; align-items: center; gap: 5px;
   padding: 6px 14px;
@@ -1218,9 +1225,31 @@ function renderIndexers(list) {
         <div class="idx-name">${esc(i.name)} <span style="font-size:10px;color:var(--tx3);font-weight:500;text-transform:uppercase;letter-spacing:.5px">${i.type || 'unit3d'}</span></div>
         <div class="idx-url">${esc(i.url)}</div>
       </div>
+      <div class="idx-ratio" id="irat-${i.id}">
+        <div class="idx-ratio-val c-muted">—</div>
+        <div class="idx-ratio-lbl">ratio</div>
+      </div>
       <button class="btn-search" id="sbtn-${i.id}" onclick="openSearch('${i.id}', '${esc(i.name)}')">🔍 Rechercher</button>
       <button class="abtn abtn-del" onclick="delIndexer('${i.id}')" title="Supprimer">✕</button>
     </div>`).join('')
+  list.forEach(i => fetchIndexerRatio(i.id))
+}
+
+async function fetchIndexerRatio(iid) {
+  const el = document.getElementById('irat-' + iid)
+  if (!el) return
+  try {
+    const r = await fetch('/api/indexers/' + iid + '/user')
+    if (!r.ok) return
+    const d = await r.json()
+    const ratio = d.ratio
+    const color = ratio === null ? 'c-muted' : ratio >= 1 ? 'c-green' : ratio >= 0.5 ? 'c-yellow' : 'c-red'
+    const ratioStr = ratio === null ? '∞' : ratio.toFixed(2)
+    el.innerHTML = `
+      <div class="idx-ratio-val ${color}">${ratioStr}</div>
+      <div class="idx-ratio-lbl">ratio</div>
+      <div class="idx-ratio-sub">↑${fmt.bytes(d.upload)} ↓${fmt.bytes(d.download)}</div>`
+  } catch(e) {}
 }
 
 async function loadIndexers() {

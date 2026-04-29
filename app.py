@@ -649,6 +649,27 @@ def search_indexer(iid):
     all_results.sort(key=lambda x: x['seeders'] + x['leechers'], reverse=True)
     return jsonify(all_results[:100])
 
+@app.route('/api/indexers/<iid>/user', methods=['GET'])
+def indexer_user(iid):
+    idx = indexers.get(iid)
+    if not idx:
+        return jsonify({'error': 'Introuvable'}), 404
+    candidates = [
+        (f"{idx['url']}/api/auth/me",   {'Cookie': idx['cookie']} if idx.get('cookie') else {}),
+        (f"{idx['url']}/api/user?api_token={idx['api_key']}", {'Cookie': idx['cookie']} if idx.get('cookie') else {}),
+    ]
+    for url, headers in candidates:
+        data, err = _tracker_request(url, headers=headers)
+        if err:
+            continue
+        u = data.get('user') or data.get('data', {}).get('attributes') or data.get('attributes') or data
+        upload   = u.get('uploaded',   u.get('upload',   0)) or 0
+        download = u.get('downloaded', u.get('download', 0)) or 0
+        ratio    = u.get('ratio') or (round(upload / download, 3) if download else None)
+        if upload or download:
+            return jsonify({'upload': upload, 'download': download, 'ratio': ratio})
+    return jsonify({'error': 'Aucun endpoint utilisateur disponible'}), 502
+
 @app.route('/api/indexers/<iid>/import', methods=['POST'])
 def import_torrent(iid):
     idx = indexers.get(iid)
