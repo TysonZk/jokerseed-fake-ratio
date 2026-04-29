@@ -616,7 +616,7 @@ body {
 .btn-search.loading { opacity: .6; pointer-events: none; }
 .idx-add-row {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr auto auto;
+  grid-template-columns: 1fr 1fr 1fr auto;
   gap: 8px;
   padding: 14px 20px;
   border-top: 1px solid var(--bd);
@@ -843,10 +843,6 @@ body {
       <input type="text"     id="idx-name"   placeholder="Nom (ex: c411)">
       <input type="text"     id="idx-url"    placeholder="URL (ex: https://c411.org)">
       <input type="password" id="idx-apikey" placeholder="API Key">
-      <select id="idx-type" style="background:var(--s2);border:1px solid var(--bd2);border-radius:var(--r3);color:var(--tx);padding:7px 10px;font-size:12px;font-family:inherit;outline:none">
-        <option value="unit3d">UNIT3D</option>
-        <option value="prowlarr">Prowlarr</option>
-      </select>
       <button class="btn-add" onclick="addIndexer()">+ Ajouter</button>
     </div>
   </div>
@@ -1200,11 +1196,10 @@ async function addIndexer() {
   const url    = document.getElementById('idx-url').value.trim()
   const apiKey = document.getElementById('idx-apikey').value.trim()
   if (!name || !url || !apiKey) { toast('Remplis tous les champs', 't-err'); return }
-  const type = document.getElementById('idx-type').value
   const r = await fetch('/api/indexers', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name, url, api_key: apiKey, type }),
+    body: JSON.stringify({ name, url, api_key: apiKey, type: 'unit3d' }),
   })
   if (!r.ok) { toast('Erreur : ' + (await r.json()).error, 't-err'); return }
   document.getElementById('idx-name').value   = ''
