@@ -567,6 +567,53 @@ body {
   background: var(--green);
 }
 .toggle-lbl { font-size: 12px; color: var(--tx2); }
+
+.hist-panel {
+  background: var(--s1);
+  border: 1px solid var(--bd);
+  border-radius: var(--r);
+  overflow: hidden;
+  margin-top: 20px;
+}
+.hist-empty {
+  display: flex; align-items: center; justify-content: center;
+  padding: 32px 24px;
+  font-size: 12px; color: var(--tx3);
+}
+.hrow {
+  display: grid;
+  grid-template-columns: 1fr 100px 110px 70px 110px 110px;
+  align-items: center;
+  padding: 10px 20px;
+  border-bottom: 1px solid var(--bd);
+  gap: 0 4px;
+  transition: background .12s;
+}
+.hrow:last-child { border-bottom: none; }
+.hrow:hover { background: rgba(255,255,255,.012); }
+.hname {
+  font-size: 12px; font-weight: 600; color: var(--tx2);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  padding-right: 12px;
+}
+.hcol {
+  font-size: 12px; font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--tx2);
+}
+.hcol .lbl { font-size: 10px; font-weight: 500; color: var(--tx3); display: block; margin-top: 1px; }
+.btn-clear {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 5px 12px;
+  background: rgba(255,95,87,.08);
+  color: var(--red);
+  border: 1px solid rgba(255,95,87,.2);
+  border-radius: var(--r3);
+  font-size: 11px; font-weight: 600;
+  cursor: pointer;
+  transition: background .15s;
+}
+.btn-clear:hover { background: rgba(255,95,87,.15); }
 </style>
 </head>
 <body>
@@ -643,6 +690,26 @@ body {
         <div class="empty-sub">Clique sur « Ajouter un torrent » ou glisse un .torrent ici</div>
       </div>
     </div>
+  </div>
+
+  <div class="hist-panel" id="hist-panel">
+    <div class="panel-header">
+      <div class="panel-title">
+        <span class="panel-title-icon">📜</span>
+        Historique
+        <span class="count-pill" id="hist-cnt">0</span>
+      </div>
+      <button class="btn-clear" onclick="clearHistory()">✕ Effacer</button>
+    </div>
+    <div class="table-head" style="grid-template-columns:1fr 100px 110px 70px 110px 110px">
+      <div class="th">Torrent</div>
+      <div class="th">Taille</div>
+      <div class="th">Uploadé</div>
+      <div class="th">Ratio</div>
+      <div class="th">Durée</div>
+      <div class="th">Retiré le</div>
+    </div>
+    <div id="hlist"><div class="hist-empty">Aucun historique</div></div>
   </div>
 
 </div>
@@ -923,12 +990,53 @@ function render(list) {
   }).join('')
 }
 
+function fmtDuration(secs) {
+  if (!secs || secs < 0) return '—'
+  const d = Math.floor(secs / 86400)
+  const h = Math.floor((secs % 86400) / 3600)
+  const m = Math.floor((secs % 3600) / 60)
+  if (d > 0) return `${d}j ${h}h`
+  if (h > 0) return `${h}h ${m}m`
+  return `${m}m`
+}
+
+function renderHistory(list) {
+  document.getElementById('hist-cnt').textContent = list.length
+  const el = document.getElementById('hlist')
+  if (!list.length) {
+    el.innerHTML = '<div class="hist-empty">Aucun historique</div>'
+    return
+  }
+  el.innerHTML = list.map(h => {
+    const duration = h.added_at > 0 ? fmtDuration(h.removed_at - h.added_at) : '—'
+    const removedAt = h.removed_at ? new Date(h.removed_at * 1000).toLocaleDateString('fr-FR', {day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'}) : '—'
+    const ratioColor = h.ratio >= 2 ? 'c-green' : h.ratio >= 1 ? 'c-yellow' : 'c-red'
+    return `
+    <div class="hrow">
+      <div class="hname" title="${esc(h.name)}">${esc(h.name)}</div>
+      <div class="hcol">${fmt.bytes(h.size)}</div>
+      <div class="hcol c-blue">${fmt.bytes(h.uploaded)}</div>
+      <div class="hcol ${ratioColor}">${h.ratio.toFixed(2)}</div>
+      <div class="hcol">${duration}</div>
+      <div class="hcol" style="font-size:11px">${removedAt}</div>
+    </div>`
+  }).join('')
+}
+
+async function clearHistory() {
+  if (!confirm('Effacer tout l\'historique ?')) return
+  await fetch('/api/history', { method: 'DELETE' })
+  renderHistory([])
+}
+
 async function poll() {
-  const [list, stats] = await Promise.all([
+  const [list, stats, hist] = await Promise.all([
     fetch('/api/torrents').then(r => r.json()),
     fetch('/api/stats').then(r => r.json()),
+    fetch('/api/history').then(r => r.json()),
   ])
   render(list)
+  renderHistory(hist)
   document.getElementById('st-speed').textContent  = fmt.speed(stats.speed)
   document.getElementById('st-up').textContent     = fmt.bytes(stats.uploaded)
   document.getElementById('st-active').textContent = stats.active

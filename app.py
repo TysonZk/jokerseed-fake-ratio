@@ -8,6 +8,7 @@ app = Flask(__name__, static_folder='static')
 DATA_DIR      = os.environ.get('DATA_DIR', 'data')
 SESSIONS_FILE = os.path.join(DATA_DIR, 'sessions.json')
 CONFIG_FILE   = os.path.join(DATA_DIR, 'config.json')
+HISTORY_FILE  = os.path.join(DATA_DIR, 'history.json')
 
 def _qb(prefix, ver):
     return {
@@ -165,6 +166,7 @@ def load_sessions() -> dict:
         r.setdefault('key', gen_key())
         r.setdefault('trackerid', '')
         r.setdefault('ratio_baseline', r.get('uploaded', 0))
+        r.setdefault('added_at', 0)
         if r.get('paused'):
             r['status'] = 'paused'
         elif r.get('status') == 'seeding':
@@ -187,8 +189,20 @@ def save_sessions(sess: dict):
     with open(SESSIONS_FILE, 'w') as f:
         json.dump(rows, f, indent=2)
 
+def load_history() -> list:
+    if not os.path.exists(HISTORY_FILE):
+        return []
+    with open(HISTORY_FILE) as f:
+        return json.load(f)
+
+def save_history(hist: list):
+    os.makedirs(DATA_DIR, exist_ok=True)
+    with open(HISTORY_FILE, 'w') as f:
+        json.dump(hist, f, indent=2)
+
 config   = load_config()
 sessions = load_sessions()
+history  = load_history()
 lock     = threading.RLock()
 executor = ThreadPoolExecutor(max_workers=20)
 ssl_ctx  = ssl.create_default_context()
@@ -409,6 +423,7 @@ def add_torrent():
         'uploaded': 0, 'speed': 0.0, 'seeders': 0, 'leechers': 0,
         'status': 'waiting', 'paused': False,
         'error': None, 'interval': 1800, 'last_announce': 0,
+        'added_at': time.time(),
     }
     with lock:
         sessions[sid] = s
@@ -422,7 +437,18 @@ def del_torrent(sid):
             return jsonify({'error': 'Introuvable'}), 404
         snap = dict(sessions[sid])
         del sessions[sid]
+        history.append({
+            'id':          snap['id'],
+            'name':        snap['name'],
+            'size':        snap['size'],
+            'uploaded':    snap['uploaded'],
+            'ratio':       round(snap['uploaded'] / snap['size'], 2) if snap['size'] > 0 else 0,
+            'added_at':    snap.get('added_at', 0),
+            'removed_at':  time.time(),
+            'announce_url': snap['announce_url'],
+        })
     save_sessions(sessions)
+    save_history(history)
     executor.submit(_send_stopped, snap)
     return '', 204
 
@@ -477,6 +503,18 @@ def get_stats():
         act = sum(1 for s in sessions.values() if s['status'] == 'seeding')
     return jsonify({'speed': round(spd, 1), 'uploaded': up,
                     'active': act, 'total': len(sessions)})
+
+@app.route('/api/history', methods=['GET'])
+def get_history():
+    return jsonify(list(reversed(history)))
+
+@app.route('/api/history', methods=['DELETE'])
+def clear_history():
+    global history
+    with lock:
+        history.clear()
+    save_history(history)
+    return '', 204
 
 @app.route('/healthz')
 def health():
