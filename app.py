@@ -543,12 +543,13 @@ def add_indexer():
     d   = request.get_json(force=True) or {}
     iid = str(uuid.uuid4())
     idx = {
-        'id':      iid,
-        'name':    str(d.get('name', '')).strip(),
-        'url':     str(d.get('url', '')).rstrip('/'),
-        'api_key': str(d.get('api_key', '')).strip(),
-        'type':    str(d.get('type', 'unit3d')),
-        'cookie':  str(d.get('cookie', '')).strip(),
+        'id':           iid,
+        'name':         str(d.get('name', '')).strip(),
+        'url':          str(d.get('url', '')).rstrip('/'),
+        'api_key':      str(d.get('api_key', '')).strip(),
+        'type':         str(d.get('type', 'unit3d')),
+        'cookie':       str(d.get('cookie', '')).strip(),
+        'announce_url': str(d.get('announce_url', '')).strip(),
     }
     if not idx['name'] or not idx['url'] or not idx['api_key']:
         return jsonify({'error': 'Champs manquants'}), 400
@@ -620,13 +621,15 @@ def search_indexer(iid):
         return jsonify({'error': err}), 502
     results = []
     for t in (data.get('data') or []):
-        attr = t.get('attributes', {})
-        tid  = t.get('id')
+        attr      = t.get('attributes') or t
+        tid       = t.get('id')
+        info_hash = t.get('infoHash') or attr.get('info_hash', '')
         results.append({
-            'name':         attr.get('name', ''),
-            'size':         attr.get('size', 0),
-            'seeders':      attr.get('seeders', 0),
-            'leechers':     attr.get('leechers', 0),
+            'name':      attr.get('name', ''),
+            'size':      attr.get('size', 0),
+            'seeders':   attr.get('seeders', 0),
+            'leechers':  attr.get('leechers', 0),
+            'info_hash': info_hash,
             'download_url': f"{idx['url']}/api/torrents/{tid}/download?api_token={idx['api_key']}",
         })
     return jsonify(results)
@@ -636,34 +639,45 @@ def import_torrent(iid):
     idx = indexers.get(iid)
     if not idx:
         return jsonify({'error': 'Introuvable'}), 404
-    d   = request.get_json(force=True) or {}
-    url = d.get('download_url', '').strip()
-    if not url:
-        return jsonify({'error': 'download_url manquant'}), 400
+    d = request.get_json(force=True) or {}
 
-    extra_headers = {}
-    if idx.get('type') == 'prowlarr':
-        extra_headers['X-Api-Key'] = idx['api_key']
-    elif idx.get('cookie'):
-        extra_headers['Cookie'] = idx['cookie']
-
-    try:
-        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0', **extra_headers})
-        res = urllib.request.urlopen(req, context=ssl_ctx, timeout=15)
-        raw = res.read()
-    except urllib.error.HTTPError as e:
+    info_hash_hex = d.get('info_hash', '').strip()
+    if info_hash_hex and idx.get('announce_url'):
         try:
-            body = json.loads(e.read())
-            msg  = body.get('message') or body.get('error') or str(e)
-        except Exception:
-            msg = f'HTTP {e.code}: {e.reason}'
-        return jsonify({'error': msg}), 502
-    except Exception as e:
-        return jsonify({'error': str(e)}), 502
-    try:
-        info = parse_torrent(raw)
-    except Exception as e:
-        return jsonify({'error': str(e)}), 400
+            info = {
+                'info_hash':    bytes.fromhex(info_hash_hex),
+                'name':         d.get('name', 'Unknown'),
+                'size':         int(d.get('size', 0)),
+                'announce_url': idx['announce_url'],
+            }
+        except Exception as e:
+            return jsonify({'error': str(e)}), 400
+    else:
+        url = d.get('download_url', '').strip()
+        if not url:
+            return jsonify({'error': 'announce_url manquant dans l\'indexeur ou download_url absent'}), 400
+        extra_headers = {}
+        if idx.get('type') == 'prowlarr':
+            extra_headers['X-Api-Key'] = idx['api_key']
+        elif idx.get('cookie'):
+            extra_headers['Cookie'] = idx['cookie']
+        try:
+            req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0', **extra_headers})
+            res = urllib.request.urlopen(req, context=ssl_ctx, timeout=15)
+            raw = res.read()
+        except urllib.error.HTTPError as e:
+            try:
+                body = json.loads(e.read())
+                msg  = body.get('message') or body.get('error') or str(e)
+            except Exception:
+                msg = f'HTTP {e.code}: {e.reason}'
+            return jsonify({'error': msg}), 502
+        except Exception as e:
+            return jsonify({'error': str(e)}), 502
+        try:
+            info = parse_torrent(raw)
+        except Exception as e:
+            return jsonify({'error': str(e)}), 400
     sid = str(uuid.uuid4())
     s   = {
         'id': sid, 'name': info['name'], 'size': info['size'],
