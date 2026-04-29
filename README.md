@@ -43,6 +43,26 @@ pip install -r requirements.txt
 python app.py
 ```
 
+### Comment ça fonctionne
+
+JokerSeed ne transfère aucun fichier. Il envoie uniquement des requêtes HTTP announce au tracker, exactement comme le ferait un vrai client BitTorrent, avec :
+
+- Un **Peer-ID** forgé au format du client choisi (ex: `-qB4390-XXXXXXXXXXXX`)
+- Le **User-Agent** correspondant au client
+- Les compteurs `uploaded`, `downloaded`, `left` attendus par le tracker
+
+**Simulation de vitesse réaliste**
+
+Pour éviter des stats robotiques, la vitesse ne monte pas à fond en permanence :
+
+- La vitesse dérive de ±8% à chaque tick (toutes les 2 secondes) pour paraître organique
+- Des **périodes d'inactivité** aléatoires simulent des moments où personne ne télécharge chez vous : la vitesse tombe à ~0–30 KB/s pendant 5 à 30 minutes, puis reprend normalement. C'est attendu.
+- Un **jitter** configurable ajoute un délai aléatoire avant chaque announce pour ne pas arriver à heure fixe
+
+**Plafond de ratio**
+
+Si activé, dès que le ratio atteint la valeur configurée, la vitesse tombe à ~0 KB/s automatiquement — utile pour ne pas afficher un ratio de 500× qui attirerait l'attention.
+
 ### Configuration
 
 Tous les réglages sont disponibles dans l'interface (icône ⚙) :
@@ -94,6 +114,26 @@ Data (config + sessions + history) is stored in `./data/`.
 pip install -r requirements.txt
 python app.py
 ```
+
+### How it works
+
+JokerSeed transfers no files. It only sends HTTP announce requests to the tracker, exactly like a real BitTorrent client would, with:
+
+- A forged **Peer-ID** matching the chosen client format (e.g. `-qB4390-XXXXXXXXXXXX`)
+- The matching **User-Agent** header
+- The `uploaded`, `downloaded`, `left` counters the tracker expects
+
+**Realistic speed simulation**
+
+To avoid robotic stats, the speed doesn't run at full throttle non-stop:
+
+- Speed drifts ±8% every tick (every 2 seconds) to look organic
+- Random **idle periods** simulate moments where nobody is downloading from you: speed drops to ~0–30 KB/s for 5 to 30 minutes, then resumes normally. This is expected behavior.
+- A configurable **jitter** adds a random delay before each announce so requests don't arrive on a fixed schedule
+
+**Ratio cap**
+
+When enabled, once the ratio reaches the configured value, speed automatically drops to ~0 KB/s — useful to avoid displaying a 500× ratio that would raise suspicion.
 
 ### Configuration
 
