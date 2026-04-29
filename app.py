@@ -521,4 +521,4 @@ def health():
     return 'ok'
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5082, debug=False, threaded=True)
+    app.run(host='0.0.0.0', port=5080, debug=False, threaded=True)
