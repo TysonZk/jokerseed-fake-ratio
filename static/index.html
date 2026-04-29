@@ -414,6 +414,7 @@ body {
   top: 50%; left: 50%;
   transform: translate(-50%, -48%);
   width: 560px; max-width: calc(100vw - 32px);
+  max-height: calc(100vh - 48px);
   background: var(--s1);
   border: 1px solid var(--bd2);
   border-radius: var(--r);
@@ -421,8 +422,21 @@ body {
   z-index: 101;
   opacity: 0; pointer-events: none;
   transition: opacity .2s, transform .2s;
+  display: flex; flex-direction: column;
 }
 .modal-bg.open .modal { opacity: 1; pointer-events: all; transform: translate(-50%, -50%); }
+@media (max-width: 560px) {
+  .modal {
+    top: 0; left: 0; right: 0; bottom: 0;
+    transform: none;
+    width: 100%; max-width: 100%; max-height: 100%;
+    border-radius: 0;
+  }
+  .modal-bg.open .modal { transform: none; }
+  .cfg-grid { grid-template-columns: 1fr !important; }
+  .modal-foot { flex-wrap: wrap; gap: 10px; }
+  .btn-save { flex: 1; justify-content: center; }
+}
 .modal-head {
   display: flex;
   align-items: center;
@@ -444,7 +458,7 @@ body {
 }
 .btn-close:hover { background: var(--s3); color: var(--tx); }
 
-.modal-body { padding: 20px; }
+.modal-body { padding: 20px; overflow-y: auto; flex: 1; }
 .cfg-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -960,7 +974,10 @@ body {
         </div>
         <div class="field full">
           <label>Webhook Discord (optionnel)</label>
-          <input type="text" id="c-webhook" placeholder="https://discord.com/api/webhooks/…">
+          <div style="display:flex;gap:8px">
+            <input type="text" id="c-webhook" placeholder="https://discord.com/api/webhooks/…" style="flex:1">
+            <button onclick="testWebhook()" id="webhook-test-btn" style="padding:8px 14px;background:rgba(79,143,255,.15);color:var(--blue);border:1px solid rgba(79,143,255,.3);border-radius:var(--r3);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:background .15s" onmouseover="this.style.background='rgba(79,143,255,.25)'" onmouseout="this.style.background='rgba(79,143,255,.15)'">Tester</button>
+          </div>
           <span class="hint">Notifications : ratio cap atteint, torrent retiré, erreur tracker</span>
         </div>
         <div class="field full">
@@ -1085,7 +1102,9 @@ async function loadCfg() {
   document.getElementById('c-port').value   = cfg.port
   document.getElementById('c-jitter').value = cfg.jitter
   document.getElementById('c-proxy').value   = cfg.proxy || ''
-  document.getElementById('c-webhook').value = cfg.webhook_url || ''
+  const whEl = document.getElementById('c-webhook')
+  whEl.value = cfg.webhook_url || ''
+  whEl.dataset.saved = cfg.webhook_url || ''
   sel.value = cfg.client
   _maxRate  = cfg.max_rate
   _maxRatio = cfg.max_ratio
@@ -1103,6 +1122,7 @@ function toggleRatio() {
 }
 
 async function saveCfg() {
+  const prevWebhook = document.getElementById('c-webhook').dataset.saved || ''
   const body = {
     min_rate:     +document.getElementById('c-min').value,
     max_rate:     +document.getElementById('c-max').value,
@@ -1125,9 +1145,32 @@ async function saveCfg() {
     body: JSON.stringify(body),
   })
   if (!r.ok) { toast('Erreur lors de la sauvegarde', 't-err'); return }
+  document.getElementById('c-webhook').dataset.saved = body.webhook_url
   const el = document.getElementById('saved')
   el.classList.add('on')
   setTimeout(() => el.classList.remove('on'), 2500)
+  if (body.webhook_url && body.webhook_url !== prevWebhook) {
+    await testWebhook(body.webhook_url)
+  }
+}
+
+async function testWebhook(url) {
+  const btn = document.getElementById('webhook-test-btn')
+  const webhookUrl = url || document.getElementById('c-webhook').value.trim()
+  if (!webhookUrl) { toast('Entre d\'abord une URL webhook', 't-err'); return }
+  if (btn) { btn.textContent = '…'; btn.disabled = true }
+  const r = await fetch('/api/webhook/test', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ url: webhookUrl }),
+  })
+  if (btn) { btn.textContent = 'Tester'; btn.disabled = false }
+  if (!r.ok) {
+    const j = await r.json()
+    toast('⚠ Webhook : ' + j.error, 't-err')
+  } else {
+    toast('✓ Message test envoyé sur Discord')
+  }
 }
 
 async function upload(file) {

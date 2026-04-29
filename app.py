@@ -237,23 +237,20 @@ def _fmt_bytes(n):
         n /= 1024
     return f'{n:.1f} PB'
 
-def _discord(title: str, description: str, color: int, fields: list = None):
-    url = config.get('webhook_url', '').strip()
-    if not url:
+def _discord(title: str, description: str, color: int, fields: list = None, url: str = None):
+    wh = (url or config.get('webhook_url', '')).strip()
+    if not wh:
         return
     embed = {'title': title, 'description': description, 'color': color}
     if fields:
         embed['fields'] = fields
     payload = json.dumps({'embeds': [embed]}).encode()
-    try:
-        req = urllib.request.Request(
-            url, data=payload,
-            headers={'Content-Type': 'application/json'},
-            method='POST'
-        )
-        urllib.request.urlopen(req, context=ssl_ctx, timeout=6)
-    except Exception:
-        pass
+    req = urllib.request.Request(
+        wh, data=payload,
+        headers={'Content-Type': 'application/json'},
+        method='POST'
+    )
+    urllib.request.urlopen(req, context=ssl_ctx, timeout=6)
 
 def public(s: dict) -> dict:
     return {k: v for k, v in s.items() if k not in ('info_hash', 'peer_id')}
@@ -579,11 +576,35 @@ def put_config():
                         ('port', int), ('jitter', int), ('max_ratio', float)]:
             if k in d:
                 config[k] = cast(d[k])
-        for k in ('client', 'proxy'):
+        for k in ('client', 'proxy', 'webhook_url'):
             if k in d:
                 config[k] = str(d[k])
+        for k in ('disable_idle',):
+            if k in d:
+                config[k] = bool(d[k])
     save_config(config)
     return jsonify(config)
+
+@app.route('/api/webhook/test', methods=['POST'])
+def webhook_test():
+    d   = request.get_json(force=True) or {}
+    url = d.get('url', '').strip() or config.get('webhook_url', '').strip()
+    if not url:
+        return jsonify({'error': 'Aucune URL webhook configurée'}), 400
+    try:
+        _discord(
+            '✅ JokerSeed — test de connexion',
+            'Le webhook Discord est correctement configuré.',
+            0x2DC86D,
+            [
+                {'name': 'Torrents actifs', 'value': str(len(sessions)),                   'inline': True},
+                {'name': 'Upload total',    'value': _fmt_bytes(sum(s['uploaded'] for s in sessions.values())), 'inline': True},
+            ],
+            url=url,
+        )
+    except Exception as e:
+        return jsonify({'error': str(e)}), 502
+    return jsonify({'ok': True})
 
 @app.route('/api/stats', methods=['GET'])
 def get_stats():
