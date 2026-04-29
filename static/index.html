@@ -959,9 +959,10 @@ function render(list) {
     const pct = _maxRate > 0 ? Math.min(100, (t.speed / _maxRate) * 100) : 0
     const isPaused = t.paused || t.status === 'paused'
     const net = t.uploaded - (t.ratio_baseline || 0)
-    const ratio = t.size > 0 ? net / t.size : 0
-    const isCapped = _maxRatio > 0 && ratio >= _maxRatio
-    const ratioColor = isCapped ? 'c-red' : (_maxRatio > 0 && ratio >= _maxRatio * 0.85 ? 'c-yellow' : 'c-muted')
+    const netRatio = t.size > 0 ? net / t.size : 0
+    const ratio = t.size > 0 ? t.uploaded / t.size : 0
+    const isCapped = _maxRatio > 0 && netRatio >= _maxRatio
+    const ratioColor = isCapped ? 'c-red' : (_maxRatio > 0 && netRatio >= _maxRatio * 0.85 ? 'c-yellow' : 'c-muted')
     const ratioLbl = _maxRatio > 0 ? `<span class="lbl">/ ${_maxRatio}</span>` : ''
     const trackerHost = (() => { try { return new URL(t.announce_url).hostname } catch(e) { return '' } })()
     const secUntil = t.last_announce > 0 ? Math.round(t.last_announce + t.interval - Date.now() / 1000) : -1
