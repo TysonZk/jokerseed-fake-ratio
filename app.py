@@ -548,6 +548,7 @@ def add_indexer():
         'url':     str(d.get('url', '')).rstrip('/'),
         'api_key': str(d.get('api_key', '')).strip(),
         'type':    str(d.get('type', 'unit3d')),
+        'cookie':  str(d.get('cookie', '')).strip(),
     }
     if not idx['name'] or not idx['url'] or not idx['api_key']:
         return jsonify({'error': 'Champs manquants'}), 400
@@ -611,7 +612,10 @@ def search_indexer(iid):
     url = (f"{idx['url']}/api/torrents"
            f"?api_token={idx['api_key']}"
            f"&perPage=50&sortField=leechers&sortDirection=desc")
-    data, err = _tracker_request(url)
+    extra = {}
+    if idx.get('cookie'):
+        extra['Cookie'] = idx['cookie']
+    data, err = _tracker_request(url, headers=extra)
     if err:
         return jsonify({'error': err}), 502
     results = []
@@ -640,6 +644,8 @@ def import_torrent(iid):
     extra_headers = {}
     if idx.get('type') == 'prowlarr':
         extra_headers['X-Api-Key'] = idx['api_key']
+    elif idx.get('cookie'):
+        extra_headers['Cookie'] = idx['cookie']
 
     try:
         req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0', **extra_headers})
