@@ -48,9 +48,6 @@ body {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--bd3); border-radius: 3px; }
 
-/* ════════════════════════════════════
-   HEADER
-════════════════════════════════════ */
 .header {
   display: flex;
   align-items: center;
@@ -107,14 +104,8 @@ body {
 .btn-icon:hover { background: var(--s3); color: var(--tx); border-color: var(--bd3); }
 .btn-icon.active { background: rgba(79,143,255,.12); color: var(--blue); border-color: rgba(79,143,255,.3); }
 
-/* ════════════════════════════════════
-   WRAPPER
-════════════════════════════════════ */
 .wrap { max-width: 1040px; margin: 0 auto; padding: 28px 20px 48px; }
 
-/* ════════════════════════════════════
-   STAT CARDS
-════════════════════════════════════ */
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -183,9 +174,6 @@ body {
 .c-purple .stat-glow { background: var(--purple); }
 .c-yellow .stat-glow { background: var(--yellow); }
 
-/* ════════════════════════════════════
-   TORRENT PANEL
-════════════════════════════════════ */
 .panel {
   background: var(--s1);
   border: 1px solid var(--bd);
@@ -241,9 +229,6 @@ body {
 .btn-add svg { flex-shrink: 0; }
 #finput { display: none; }
 
-/* ════════════════════════════════════
-   TABLE HEADER
-════════════════════════════════════ */
 .table-head {
   display: grid;
   grid-template-columns: 1fr 120px 110px 75px 70px 70px 90px 100px;
@@ -262,9 +247,6 @@ body {
   .table-head { display: none; }
 }
 
-/* ════════════════════════════════════
-   TORRENT ROWS
-════════════════════════════════════ */
 .tlist { min-height: 80px; }
 
 .trow {
@@ -280,7 +262,6 @@ body {
 .trow:last-child { border-bottom: none; }
 .trow:hover { background: rgba(255,255,255,.018); }
 
-/* left color stripe */
 .trow::before {
   content: '';
   position: absolute;
@@ -293,7 +274,6 @@ body {
 .trow.waiting::before { background: var(--yellow); animation: stripe-blink 2s infinite; }
 @keyframes stripe-blink { 0%,100%{opacity:.4} 50%{opacity:1} }
 
-/* name col */
 .tcol-name { min-width: 0; padding-right: 12px; }
 .tname {
   font-size: 13px;
@@ -317,7 +297,6 @@ body {
   transition: width .8s ease;
 }
 
-/* data cols */
 .tcol {
   font-size: 12px;
   font-weight: 700;
@@ -332,7 +311,6 @@ body {
 .c-red    { color: var(--red); }
 .c-muted  { color: var(--tx2); }
 
-/* actions col */
 .tcol-actions {
   display: flex;
   align-items: center;
@@ -340,7 +318,6 @@ body {
   gap: 6px;
 }
 
-/* error msg */
 .terr {
   font-size: 10px;
   color: var(--red);
@@ -350,9 +327,6 @@ body {
   margin-top: 2px;
 }
 
-/* ════════════════════════════════════
-   BADGES
-════════════════════════════════════ */
 .badge {
   display: inline-flex;
   align-items: center;
@@ -379,9 +353,6 @@ body {
 .b-purple .badge-dot { background: var(--purple); }
 @keyframes bdot { 0%,100%{opacity:1} 50%{opacity:.2} }
 
-/* ════════════════════════════════════
-   ACTION BUTTONS
-════════════════════════════════════ */
 .abtn {
   display: inline-flex;
   align-items: center;
@@ -400,9 +371,6 @@ body {
 .abtn-resume { background: rgba(79,143,255,.1); color: var(--blue);   border-color: rgba(79,143,255,.2); }
 .abtn-del    { background: rgba(255,95,87,.1);  color: var(--red);    border-color: rgba(255,95,87,.2); }
 
-/* ════════════════════════════════════
-   EMPTY STATE
-════════════════════════════════════ */
 .empty {
   display: flex;
   flex-direction: column;
@@ -416,9 +384,6 @@ body {
 .empty-title { font-size: 14px; font-weight: 600; color: var(--tx2); }
 .empty-sub { font-size: 12px; }
 
-/* ════════════════════════════════════
-   CONFIG MODAL
-════════════════════════════════════ */
 .modal-bg {
   position: fixed; inset: 0;
   background: rgba(7,9,13,.7);
@@ -535,9 +500,6 @@ body {
 }
 .btn-save:hover { filter: brightness(1.1); }
 
-/* ════════════════════════════════════
-   DRAG OVERLAY
-════════════════════════════════════ */
 .drag-overlay {
   position: fixed; inset: 0;
   background: rgba(7,9,13,.85);
@@ -556,9 +518,6 @@ body {
 .drag-overlay-icon { font-size: 52px; }
 .drag-overlay-txt { font-size: 18px; font-weight: 700; color: var(--blue); }
 
-/* ════════════════════════════════════
-   TOAST
-════════════════════════════════════ */
 .toast {
   position: fixed;
   bottom: 22px; left: 50%;
@@ -578,9 +537,6 @@ body {
 .toast.t-ok  { border-color: rgba(45,200,109,.3); color: var(--green); background: rgba(45,200,109,.07); }
 .toast.t-err { border-color: rgba(255,95,87,.3);  color: var(--red);   background: rgba(255,95,87,.07); }
 
-/* ════════════════════════════════════
-   TOGGLE SWITCH
-════════════════════════════════════ */
 .toggle {
   display: inline-flex; align-items: center; gap: 8px;
   cursor: pointer; user-select: none;
@@ -615,7 +571,6 @@ body {
 </head>
 <body>
 
-<!-- ── Header ── -->
 <header class="header">
   <a class="logo" href="/">
     <img src="/favicon.ico" alt="JokerSeed">
@@ -627,10 +582,8 @@ body {
   </div>
 </header>
 
-<!-- ── Main ── -->
 <div class="wrap">
 
-  <!-- Stats -->
   <div class="stats-grid">
     <div class="stat-card c-blue">
       <span class="stat-icon">⚡</span>
@@ -658,7 +611,6 @@ body {
     </div>
   </div>
 
-  <!-- Torrent panel -->
   <div class="panel">
     <div class="panel-header">
       <div class="panel-title">
@@ -695,7 +647,6 @@ body {
 
 </div>
 
-<!-- ── Config modal ── -->
 <div class="modal-bg" id="modal-bg" onclick="closeCfgOutside(event)">
   <div class="modal" id="modal">
     <div class="modal-head">
@@ -767,20 +718,17 @@ body {
   </div>
 </div>
 
-<!-- ── Drag overlay ── -->
 <div class="drag-overlay" id="drag-overlay">
   <div class="drag-overlay-icon">🌱</div>
   <div class="drag-overlay-txt">Dépose tes fichiers .torrent ici</div>
 </div>
 
-<!-- ── Toast ── -->
 <div class="toast" id="toast"></div>
 
 <script>
 let _maxRate = 18000
 let _maxRatio = 0
 
-// ── Formatters ───────────────────────────────────────────────────────────────
 const fmt = {
   speed(v) {
     if (!v) return '0 KB/s'
@@ -797,7 +745,6 @@ const fmt = {
 }
 const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')
 
-// ── Toast ────────────────────────────────────────────────────────────────────
 let _tt
 function toast(msg, type='t-ok') {
   const el = document.getElementById('toast')
@@ -807,7 +754,6 @@ function toast(msg, type='t-ok') {
   _tt = setTimeout(() => el.classList.remove('on'), 3200)
 }
 
-// ── Modal ────────────────────────────────────────────────────────────────────
 function openCfg() {
   document.getElementById('modal-bg').classList.add('open')
   document.getElementById('cfg-btn').classList.add('active')
@@ -821,7 +767,6 @@ function closeCfgOutside(e) {
 }
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeCfg() })
 
-// ── Config ───────────────────────────────────────────────────────────────────
 async function loadCfg() {
   const [cfg, clients] = await Promise.all([
     fetch('/api/config').then(r => r.json()),
@@ -876,7 +821,6 @@ async function saveCfg() {
   setTimeout(() => el.classList.remove('on'), 2500)
 }
 
-// ── Upload ───────────────────────────────────────────────────────────────────
 async function upload(file) {
   const fd = new FormData()
   fd.append('file', file)
@@ -892,7 +836,6 @@ document.getElementById('finput').addEventListener('change', e => {
   e.target.value = ''
 })
 
-// drag anywhere
 let _dragCount = 0
 document.addEventListener('dragenter', e => {
   if ([...e.dataTransfer.types].includes('Files')) {
@@ -912,7 +855,6 @@ document.addEventListener('drop', e => {
   ;[...e.dataTransfer.files].filter(f => f.name.endsWith('.torrent')).forEach(upload)
 })
 
-// ── Actions ──────────────────────────────────────────────────────────────────
 async function del(id, name) {
   if (!confirm(`Retirer "${name}" ?`)) return
   await fetch('/api/torrents/' + id, { method: 'DELETE' })
@@ -922,7 +864,6 @@ async function del(id, name) {
 async function pause(id)  { await fetch('/api/torrents/'+id+'/pause',  { method: 'POST' }); poll() }
 async function resume(id) { await fetch('/api/torrents/'+id+'/resume', { method: 'POST' }); poll() }
 
-// ── Render ───────────────────────────────────────────────────────────────────
 function badge(st, capped) {
   if (capped) return `<span class="badge b-purple"><span class="badge-dot"></span>Limité</span>`
   const map = {
@@ -982,7 +923,6 @@ function render(list) {
   }).join('')
 }
 
-// ── Poll ─────────────────────────────────────────────────────────────────────
 async function poll() {
   const [list, stats] = await Promise.all([
     fetch('/api/torrents').then(r => r.json()),

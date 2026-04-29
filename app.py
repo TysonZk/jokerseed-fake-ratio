@@ -9,8 +9,6 @@ DATA_DIR      = os.environ.get('DATA_DIR', 'data')
 SESSIONS_FILE = os.path.join(DATA_DIR, 'sessions.json')
 CONFIG_FILE   = os.path.join(DATA_DIR, 'config.json')
 
-# ── Clients ───────────────────────────────────────────────────────────────────
-
 def _qb(prefix, ver):
     return {
         'prefix': prefix, 'ua': f'qBittorrent/{ver}',
@@ -70,8 +68,6 @@ CLIENTS = {
     },
 }
 
-# ── Bencode ───────────────────────────────────────────────────────────────────
-
 def bdecode(data: bytes):
     def _d(pos):
         tok = data[pos:pos+1]
@@ -105,8 +101,6 @@ def bencode(obj) -> bytes:
         s = sorted(obj.items(), key=lambda x: x[0] if isinstance(x[0], bytes) else x[0].encode())
         return b'd' + b''.join(bencode(k) + bencode(v) for k, v in s) + b'e'
 
-# ── Torrent parsing ───────────────────────────────────────────────────────────
-
 def parse_torrent(raw: bytes) -> dict:
     d    = bdecode(raw)
     info = d[b'info']
@@ -135,18 +129,16 @@ def gen_peer_id(client_key: str) -> bytes:
 def gen_key() -> str:
     return '%08X' % random.randint(0, 0xFFFFFFFF)
 
-# ── Persistence ───────────────────────────────────────────────────────────────
-
 def _default_config() -> dict:
     return {
-        'min_rate':    8000,               # KB/s
-        'max_rate':    18000,              # KB/s
-        'simultaneous': 5,                 # max torrents actifs
-        'client':      'qbittorrent-4.3.9',
-        'port':        49152,              # port annoncé aux trackers
-        'jitter':      120,               # délai aléatoire max (s) avant announce
-        'proxy':       '',                # URL proxy HTTP optionnel
-        'max_ratio':   5.0,               # ratio max avant de quasi-stopper l'upload
+        'min_rate':     8000,
+        'max_rate':     18000,
+        'simultaneous': 5,
+        'client':       'qbittorrent-4.3.9',
+        'port':         49152,
+        'jitter':       120,
+        'proxy':        '',
+        'max_ratio':    5.0,
     }
 
 def load_config() -> dict:
@@ -172,7 +164,7 @@ def load_sessions() -> dict:
         r.setdefault('last_announce', 0)
         r.setdefault('key', gen_key())
         r.setdefault('trackerid', '')
-        r.setdefault('ratio_baseline', r.get('uploaded', 0))  # grandfathers les torrents existants
+        r.setdefault('ratio_baseline', r.get('uploaded', 0))
         if r.get('paused'):
             r['status'] = 'paused'
         elif r.get('status') == 'seeding':
@@ -195,8 +187,6 @@ def save_sessions(sess: dict):
     with open(SESSIONS_FILE, 'w') as f:
         json.dump(rows, f, indent=2)
 
-# ── State ─────────────────────────────────────────────────────────────────────
-
 config   = load_config()
 sessions = load_sessions()
 lock     = threading.RLock()
@@ -208,18 +198,12 @@ ssl_ctx.verify_mode    = ssl.CERT_NONE
 def public(s: dict) -> dict:
     return {k: v for k, v in s.items() if k not in ('info_hash', 'peer_id')}
 
-# ── Announce ──────────────────────────────────────────────────────────────────
-
 def announce_one(sid: str):
     with lock:
         s = sessions.get(sid)
         if not s or s.get('paused'):
             return
-        now      = time.time()
-        # is_new: torrent freshly added (uploaded==0, never announced)
-        # is_first: never announced in this or any previous session
         is_new = s['uploaded'] == 0 and s['last_announce'] == 0
-        # event=started uniquement pour les torrents neufs (uploaded=0, jamais annoncé)
         event  = 'started' if is_new else ''
 
         client = CLIENTS.get(config['client'], CLIENTS['qbittorrent-4.3.9'])
@@ -247,17 +231,16 @@ def announce_one(sid: str):
         hdrs.update(client.get('headers', {}))
         proxy = config.get('proxy', '').strip()
 
-    # Jitter : délai aléatoire pour paraître moins robotique
     jitter = config.get('jitter', 0)
     if jitter > 0 and not is_new:
         time.sleep(random.uniform(0, jitter))
 
     try:
         if proxy:
-            handler  = urllib.request.ProxyHandler({'http': proxy, 'https': proxy})
-            opener   = urllib.request.build_opener(handler)
+            handler = urllib.request.ProxyHandler({'http': proxy, 'https': proxy})
+            opener  = urllib.request.build_opener(handler)
         else:
-            opener   = urllib.request.build_opener()
+            opener  = urllib.request.build_opener()
 
         req = urllib.request.Request(url, headers=hdrs)
         res = opener.open(req, timeout=20)
@@ -287,7 +270,6 @@ def announce_one(sid: str):
                 s['last_announce'] = time.time()
 
 def _send_stopped(snap: dict):
-    """Envoie event=stopped au tracker avec un snapshot de session."""
     if snap.get('last_announce', 0) == 0:
         return
     client = CLIENTS.get(config['client'], CLIENTS['qbittorrent-4.3.9'])
@@ -356,8 +338,7 @@ def stats_updater_loop():
                     if s['status'] != 'seeding' or s.get('paused'):
                         continue
 
-                    # Ratio cap : calculé depuis ratio_baseline pour ne pas pénaliser les anciens torrents
-                    net = s['uploaded'] - s.get('ratio_baseline', 0)
+                    net   = s['uploaded'] - s.get('ratio_baseline', 0)
                     ratio = net / s['size'] if s['size'] > 0 else 0
                     if max_ratio > 0 and ratio >= max_ratio:
                         spd = round(random.uniform(0, 30), 1)
@@ -365,14 +346,12 @@ def stats_updater_loop():
                         s['speed']     = spd
                         continue
 
-                    # Période d'inactivité : personne ne télécharge en ce moment
                     if now < s.get('_idle_until', 0):
                         spd = round(random.uniform(0, 30), 1)
                         s['uploaded'] += int(spd * 1024 * interval)
                         s['speed']     = spd
                         continue
 
-                    # Transition aléatoire vers l'inactivité (avg ~33 min de seeding continu)
                     if random.random() < 0.001:
                         s['_idle_until'] = now + random.uniform(300, 1800)
                         spd = round(random.uniform(0, 30), 1)
@@ -380,7 +359,6 @@ def stats_updater_loop():
                         s['speed']     = spd
                         continue
 
-                    # Seeding actif : dérive progressive ±8 %
                     cur = s['speed'] if mn <= s['speed'] <= mx else random.uniform(mn, mx)
                     new = cur + cur * random.uniform(-0.08, 0.08)
                     new = max(mn, min(mx, new))
@@ -389,10 +367,8 @@ def stats_updater_loop():
         except Exception:
             pass
 
-threading.Thread(target=announcer_loop,   daemon=True, name='announcer').start()
+threading.Thread(target=announcer_loop,     daemon=True, name='announcer').start()
 threading.Thread(target=stats_updater_loop, daemon=True, name='stats-updater').start()
-
-# ── API ───────────────────────────────────────────────────────────────────────
 
 @app.route('/')
 def index():
@@ -472,7 +448,6 @@ def resume_torrent(sid):
             return jsonify({'error': 'Introuvable'}), 404
         s['paused'] = False
         s['status'] = 'waiting'
-        # Ne pas reset last_announce : on ré-annonce seulement si l'intervalle est dépassé
     save_sessions(sessions)
     return jsonify(public(s))
 
