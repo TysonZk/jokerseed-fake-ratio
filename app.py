@@ -353,7 +353,8 @@ def announcer_loop():
             pass
 
 def stats_updater_loop():
-    interval = 2
+    interval  = 2
+    last_save = 0
     while True:
         try:
             time.sleep(interval)
@@ -391,6 +392,10 @@ def stats_updater_loop():
                     new = max(mn, min(mx, new))
                     s['uploaded'] += int(new * 1024 * interval)
                     s['speed']     = round(new, 1)
+
+                if now - last_save >= 30:
+                    save_sessions(sessions)
+                    last_save = now
         except Exception:
             pass
 
@@ -542,6 +547,7 @@ def add_indexer():
         'name':    str(d.get('name', '')).strip(),
         'url':     str(d.get('url', '')).rstrip('/'),
         'api_key': str(d.get('api_key', '')).strip(),
+        'type':    str(d.get('type', 'unit3d')),
     }
     if not idx['name'] or not idx['url'] or not idx['api_key']:
         return jsonify({'error': 'Champs manquants'}), 400
@@ -557,9 +563,11 @@ def del_indexer(iid):
     save_indexers(indexers)
     return '', 204
 
-def _tracker_request(url):
-    req = urllib.request.Request(url, headers={
-        'Accept': 'application/json', 'User-Agent': 'Mozilla/5.0'})
+def _tracker_request(url, headers=None):
+    h = {'Accept': 'application/json', 'User-Agent': 'Mozilla/5.0'}
+    if headers:
+        h.update(headers)
+    req = urllib.request.Request(url, headers=h)
     try:
         res = urllib.request.urlopen(req, context=ssl_ctx, timeout=15)
         return json.loads(res.read()), None
@@ -578,6 +586,28 @@ def search_indexer(iid):
     idx = indexers.get(iid)
     if not idx:
         return jsonify({'error': 'Introuvable'}), 404
+
+    if idx.get('type') == 'prowlarr':
+        url = (f"{idx['url']}/api/v1/search"
+               f"?query=&indexerIds=-2&type=search&limit=100&offset=0")
+        data, err = _tracker_request(url, headers={'X-Api-Key': idx['api_key']})
+        if err:
+            return jsonify({'error': err}), 502
+        results = []
+        for t in (data if isinstance(data, list) else []):
+            dl = t.get('downloadUrl', '')
+            if not dl:
+                continue
+            results.append({
+                'name':         t.get('title', ''),
+                'size':         t.get('size', 0),
+                'seeders':      t.get('seeders', 0),
+                'leechers':     t.get('leechers', 0),
+                'download_url': dl,
+            })
+        results.sort(key=lambda x: x['leechers'], reverse=True)
+        return jsonify(results[:50])
+
     url = (f"{idx['url']}/api/torrents"
            f"?api_token={idx['api_key']}"
            f"&perPage=50&sortField=leechers&sortDirection=desc")
@@ -587,23 +617,32 @@ def search_indexer(iid):
     results = []
     for t in (data.get('data') or []):
         attr = t.get('attributes', {})
+        tid  = t.get('id')
         results.append({
-            'id':       t.get('id'),
-            'name':     attr.get('name', ''),
-            'size':     attr.get('size', 0),
-            'seeders':  attr.get('seeders', 0),
-            'leechers': attr.get('leechers', 0),
+            'name':         attr.get('name', ''),
+            'size':         attr.get('size', 0),
+            'seeders':      attr.get('seeders', 0),
+            'leechers':     attr.get('leechers', 0),
+            'download_url': f"{idx['url']}/api/torrents/{tid}/download?api_token={idx['api_key']}",
         })
     return jsonify(results)
 
-@app.route('/api/indexers/<iid>/import/<tid>', methods=['POST'])
-def import_torrent(iid, tid):
+@app.route('/api/indexers/<iid>/import', methods=['POST'])
+def import_torrent(iid):
     idx = indexers.get(iid)
     if not idx:
         return jsonify({'error': 'Introuvable'}), 404
-    url = f"{idx['url']}/api/torrents/{tid}/download?api_token={idx['api_key']}"
+    d   = request.get_json(force=True) or {}
+    url = d.get('download_url', '').strip()
+    if not url:
+        return jsonify({'error': 'download_url manquant'}), 400
+
+    extra_headers = {}
+    if idx.get('type') == 'prowlarr':
+        extra_headers['X-Api-Key'] = idx['api_key']
+
     try:
-        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0', **extra_headers})
         res = urllib.request.urlopen(req, context=ssl_ctx, timeout=15)
         raw = res.read()
     except urllib.error.HTTPError as e:

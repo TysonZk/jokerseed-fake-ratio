@@ -819,6 +819,10 @@ body {
       <input type="text"     id="idx-name"    placeholder="Nom (ex: c411)">
       <input type="text"     id="idx-url"     placeholder="URL (ex: https://c411.org)">
       <input type="password" id="idx-apikey"  placeholder="API Key">
+      <select id="idx-type" style="background:var(--s2);border:1px solid var(--bd2);border-radius:var(--r3);color:var(--tx);padding:7px 10px;font-size:12px;font-family:inherit;outline:none">
+        <option value="unit3d">UNIT3D</option>
+        <option value="prowlarr">Prowlarr</option>
+      </select>
       <button class="btn-add" onclick="addIndexer()">+ Ajouter</button>
     </div>
   </div>
@@ -1153,7 +1157,7 @@ function renderIndexers(list) {
   el.innerHTML = list.map(i => `
     <div class="idx-row">
       <div class="idx-info">
-        <div class="idx-name">${esc(i.name)}</div>
+        <div class="idx-name">${esc(i.name)} <span style="font-size:10px;color:var(--tx3);font-weight:500;text-transform:uppercase;letter-spacing:.5px">${i.type || 'unit3d'}</span></div>
         <div class="idx-url">${esc(i.url)}</div>
       </div>
       <button class="btn-search" id="sbtn-${i.id}" onclick="openSearch('${i.id}', '${esc(i.name)}')">🔍 Rechercher</button>
@@ -1171,10 +1175,11 @@ async function addIndexer() {
   const url    = document.getElementById('idx-url').value.trim()
   const apiKey = document.getElementById('idx-apikey').value.trim()
   if (!name || !url || !apiKey) { toast('Remplis tous les champs', 't-err'); return }
+  const type = document.getElementById('idx-type').value
   const r = await fetch('/api/indexers', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name, url, api_key: apiKey }),
+    body: JSON.stringify({ name, url, api_key: apiKey, type }),
   })
   if (!r.ok) { toast('Erreur : ' + (await r.json()).error, 't-err'); return }
   document.getElementById('idx-name').value   = ''
@@ -1202,13 +1207,13 @@ async function openSearch(iid, name) {
     const data = await r.json()
     if (!r.ok) { document.getElementById('search-results').innerHTML = `<div class="hist-empty" style="color:var(--red)">Erreur : ${esc(data.error)}</div>`; return }
     if (!data.length) { document.getElementById('search-results').innerHTML = '<div class="hist-empty">Aucun résultat</div>'; return }
-    document.getElementById('search-results').innerHTML = data.map(t => `
+    document.getElementById('search-results').innerHTML = data.map((t, i) => `
       <div class="srow">
         <div class="sname" title="${esc(t.name)}">${esc(t.name)}</div>
         <div class="scol">${fmt.bytes(t.size)}</div>
         <div class="scol c-green">${t.seeders}</div>
         <div class="scol c-yellow">${t.leechers}</div>
-        <button class="btn-import" id="imp-${t.id}" onclick="importTorrent('${iid}','${t.id}',this)">⬇ Importer</button>
+        <button class="btn-import" id="imp-${i}" onclick="importTorrent('${iid}','${esc(t.download_url)}',this)">⬇ Importer</button>
       </div>`).join('')
   } finally {
     if (btn) btn.classList.remove('loading')
@@ -1223,10 +1228,14 @@ function closeSearchOutside(e) {
 }
 document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeCfg(); closeSearch() } })
 
-async function importTorrent(iid, tid, btn) {
+async function importTorrent(iid, downloadUrl, btn) {
   btn.disabled = true
   btn.textContent = '…'
-  const r = await fetch(`/api/indexers/${iid}/import/${tid}`, { method: 'POST' })
+  const r = await fetch(`/api/indexers/${iid}/import`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ download_url: downloadUrl }),
+  })
   const j = await r.json()
   if (!r.ok) { toast('⚠ ' + j.error, 't-err'); btn.disabled = false; btn.textContent = '⬇ Importer'; return }
   btn.textContent = '✓'
