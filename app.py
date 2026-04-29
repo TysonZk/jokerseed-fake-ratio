@@ -5,10 +5,11 @@ from flask import Flask, request, jsonify, send_from_directory
 
 app = Flask(__name__, static_folder='static')
 
-DATA_DIR      = os.environ.get('DATA_DIR', 'data')
-SESSIONS_FILE = os.path.join(DATA_DIR, 'sessions.json')
-CONFIG_FILE   = os.path.join(DATA_DIR, 'config.json')
-HISTORY_FILE  = os.path.join(DATA_DIR, 'history.json')
+DATA_DIR       = os.environ.get('DATA_DIR', 'data')
+SESSIONS_FILE  = os.path.join(DATA_DIR, 'sessions.json')
+CONFIG_FILE    = os.path.join(DATA_DIR, 'config.json')
+HISTORY_FILE   = os.path.join(DATA_DIR, 'history.json')
+INDEXERS_FILE  = os.path.join(DATA_DIR, 'indexers.json')
 
 def _qb(prefix, ver):
     return {
@@ -200,9 +201,21 @@ def save_history(hist: list):
     with open(HISTORY_FILE, 'w') as f:
         json.dump(hist, f, indent=2)
 
+def load_indexers() -> dict:
+    if not os.path.exists(INDEXERS_FILE):
+        return {}
+    with open(INDEXERS_FILE) as f:
+        return json.load(f)
+
+def save_indexers(idx: dict):
+    os.makedirs(DATA_DIR, exist_ok=True)
+    with open(INDEXERS_FILE, 'w') as f:
+        json.dump(idx, f, indent=2)
+
 config   = load_config()
 sessions = load_sessions()
 history  = load_history()
+indexers = load_indexers()
 lock     = threading.RLock()
 executor = ThreadPoolExecutor(max_workers=20)
 ssl_ctx  = ssl.create_default_context()
@@ -515,6 +528,93 @@ def clear_history():
         history.clear()
     save_history(history)
     return '', 204
+
+@app.route('/api/indexers', methods=['GET'])
+def list_indexers():
+    return jsonify([{k: v for k, v in i.items() if k != 'api_key'} | {'api_key': '***' if i.get('api_key') else ''} for i in indexers.values()])
+
+@app.route('/api/indexers', methods=['POST'])
+def add_indexer():
+    d   = request.get_json(force=True) or {}
+    iid = str(uuid.uuid4())
+    idx = {
+        'id':      iid,
+        'name':    str(d.get('name', '')).strip(),
+        'url':     str(d.get('url', '')).rstrip('/'),
+        'api_key': str(d.get('api_key', '')).strip(),
+    }
+    if not idx['name'] or not idx['url'] or not idx['api_key']:
+        return jsonify({'error': 'Champs manquants'}), 400
+    indexers[iid] = idx
+    save_indexers(indexers)
+    return jsonify({k: v for k, v in idx.items() if k != 'api_key'} | {'api_key': '***'}), 201
+
+@app.route('/api/indexers/<iid>', methods=['DELETE'])
+def del_indexer(iid):
+    if iid not in indexers:
+        return jsonify({'error': 'Introuvable'}), 404
+    del indexers[iid]
+    save_indexers(indexers)
+    return '', 204
+
+@app.route('/api/indexers/<iid>/search', methods=['GET'])
+def search_indexer(iid):
+    idx = indexers.get(iid)
+    if not idx:
+        return jsonify({'error': 'Introuvable'}), 404
+    url = (f"{idx['url']}/api/torrents"
+           f"?api_token={idx['api_key']}"
+           f"&perPage=50&sortField=leechers&sortDirection=desc")
+    try:
+        req = urllib.request.Request(url, headers={
+            'Accept': 'application/json', 'User-Agent': 'Mozilla/5.0'})
+        res = urllib.request.urlopen(req, context=ssl_ctx, timeout=15)
+        data = json.loads(res.read())
+        results = []
+        for t in data.get('data', []):
+            attr = t.get('attributes', {})
+            results.append({
+                'id':       t.get('id'),
+                'name':     attr.get('name', ''),
+                'size':     attr.get('size', 0),
+                'seeders':  attr.get('seeders', 0),
+                'leechers': attr.get('leechers', 0),
+            })
+        return jsonify(results)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/indexers/<iid>/import/<tid>', methods=['POST'])
+def import_torrent(iid, tid):
+    idx = indexers.get(iid)
+    if not idx:
+        return jsonify({'error': 'Introuvable'}), 404
+    url = f"{idx['url']}/api/torrents/{tid}/download?api_token={idx['api_key']}"
+    try:
+        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+        res = urllib.request.urlopen(req, context=ssl_ctx, timeout=15)
+        raw = res.read()
+        info = parse_torrent(raw)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
+    sid = str(uuid.uuid4())
+    s   = {
+        'id': sid, 'name': info['name'], 'size': info['size'],
+        'info_hash': info['info_hash'],
+        'peer_id':   gen_peer_id(config['client']),
+        'key':       gen_key(),
+        'trackerid': '',
+        'ratio_baseline': 0,
+        'announce_url': info['announce_url'],
+        'uploaded': 0, 'speed': 0.0, 'seeders': 0, 'leechers': 0,
+        'status': 'waiting', 'paused': False,
+        'error': None, 'interval': 1800, 'last_announce': 0,
+        'added_at': time.time(),
+    }
+    with lock:
+        sessions[sid] = s
+    save_sessions(sessions)
+    return jsonify(public(s)), 201
 
 @app.route('/healthz')
 def health():

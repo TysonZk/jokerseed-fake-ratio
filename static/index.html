@@ -568,6 +568,120 @@ body {
 }
 .toggle-lbl { font-size: 12px; color: var(--tx2); }
 
+.idx-panel {
+  background: var(--s1);
+  border: 1px solid var(--bd);
+  border-radius: var(--r);
+  overflow: hidden;
+  margin-top: 20px;
+}
+.idx-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--bd);
+}
+.idx-row:last-child { border-bottom: none; }
+.idx-info { flex: 1; min-width: 0; }
+.idx-name { font-size: 13px; font-weight: 600; color: var(--tx); }
+.idx-url  { font-size: 11px; color: var(--tx3); margin-top: 2px; }
+.btn-search {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 6px 14px;
+  background: rgba(155,109,255,.1);
+  color: var(--purple);
+  border: 1px solid rgba(155,109,255,.25);
+  border-radius: var(--r3);
+  font-size: 12px; font-weight: 600;
+  cursor: pointer; transition: background .15s;
+  white-space: nowrap;
+}
+.btn-search:hover { background: rgba(155,109,255,.2); }
+.btn-search.loading { opacity: .6; pointer-events: none; }
+.idx-add-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr auto;
+  gap: 8px;
+  padding: 14px 20px;
+  border-top: 1px solid var(--bd);
+  background: rgba(0,0,0,.1);
+}
+.idx-add-row input {
+  background: var(--s2);
+  border: 1px solid var(--bd2);
+  border-radius: var(--r3);
+  color: var(--tx);
+  padding: 7px 10px;
+  font-size: 12px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color .15s;
+}
+.idx-add-row input:focus { border-color: var(--blue); }
+.idx-add-row input::placeholder { color: var(--tx3); }
+
+.search-modal-bg {
+  position: fixed; inset: 0;
+  background: rgba(7,9,13,.75);
+  backdrop-filter: blur(6px);
+  z-index: 200;
+  opacity: 0; pointer-events: none;
+  transition: opacity .2s;
+  display: flex; align-items: center; justify-content: center;
+}
+.search-modal-bg.open { opacity: 1; pointer-events: all; }
+.search-modal {
+  background: var(--s1);
+  border: 1px solid var(--bd2);
+  border-radius: var(--r);
+  box-shadow: 0 24px 64px rgba(0,0,0,.6);
+  width: 700px; max-width: calc(100vw - 32px);
+  max-height: 80vh;
+  display: flex; flex-direction: column;
+  opacity: 0; transform: translateY(12px);
+  transition: opacity .2s, transform .2s;
+}
+.search-modal-bg.open .search-modal { opacity: 1; transform: translateY(0); }
+.search-modal-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--bd);
+  flex-shrink: 0;
+}
+.search-modal-title { font-size: 13px; font-weight: 700; color: var(--tx); display: flex; align-items: center; gap: 8px; }
+.search-modal-body { overflow-y: auto; flex: 1; }
+.srow {
+  display: grid;
+  grid-template-columns: 1fr 90px 60px 60px 90px;
+  align-items: center;
+  padding: 10px 18px;
+  border-bottom: 1px solid var(--bd);
+  gap: 0 8px;
+}
+.srow:last-child { border-bottom: none; }
+.srow:hover { background: rgba(255,255,255,.015); }
+.sname {
+  font-size: 12px; font-weight: 600; color: var(--tx2);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  padding-right: 8px;
+}
+.scol { font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--tx3); }
+.btn-import {
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 5px 12px;
+  background: rgba(45,200,109,.1);
+  color: var(--green);
+  border: 1px solid rgba(45,200,109,.25);
+  border-radius: var(--r3);
+  font-size: 11px; font-weight: 700;
+  cursor: pointer; transition: background .15s;
+  white-space: nowrap;
+}
+.btn-import:hover { background: rgba(45,200,109,.2); }
+.btn-import:disabled { opacity: .4; pointer-events: none; }
+.sth { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .7px; color: var(--tx3); }
+
 .hist-panel {
   background: var(--s1);
   border: 1px solid var(--bd);
@@ -692,6 +806,23 @@ body {
     </div>
   </div>
 
+  <div class="idx-panel">
+    <div class="panel-header">
+      <div class="panel-title">
+        <span class="panel-title-icon">🔌</span>
+        Indexeurs
+        <span class="count-pill" id="idx-cnt">0</span>
+      </div>
+    </div>
+    <div id="idx-list"></div>
+    <div class="idx-add-row">
+      <input type="text"     id="idx-name"    placeholder="Nom (ex: c411)">
+      <input type="text"     id="idx-url"     placeholder="URL (ex: https://c411.org)">
+      <input type="password" id="idx-apikey"  placeholder="API Key">
+      <button class="btn-add" onclick="addIndexer()">+ Ajouter</button>
+    </div>
+  </div>
+
   <div class="hist-panel" id="hist-panel">
     <div class="panel-header">
       <div class="panel-title">
@@ -781,6 +912,25 @@ body {
         <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
         Sauvegarder
       </button>
+    </div>
+  </div>
+</div>
+
+<div class="search-modal-bg" id="search-modal-bg" onclick="closeSearchOutside(event)">
+  <div class="search-modal">
+    <div class="search-modal-head">
+      <div class="search-modal-title">🔍 <span id="search-modal-label">Torrents disponibles</span></div>
+      <button class="btn-close" onclick="closeSearch()">✕</button>
+    </div>
+    <div class="search-modal-body">
+      <div style="display:grid;grid-template-columns:1fr 90px 60px 60px 90px;padding:8px 18px;border-bottom:1px solid var(--bd);background:rgba(0,0,0,.15)">
+        <div class="sth">Torrent</div>
+        <div class="sth">Taille</div>
+        <div class="sth">Seeders</div>
+        <div class="sth">Leechers</div>
+        <div class="sth"></div>
+      </div>
+      <div id="search-results"></div>
     </div>
   </div>
 </div>
@@ -991,6 +1141,100 @@ function render(list) {
   }).join('')
 }
 
+let _currentIndexerId = null
+
+function renderIndexers(list) {
+  document.getElementById('idx-cnt').textContent = list.length
+  const el = document.getElementById('idx-list')
+  if (!list.length) {
+    el.innerHTML = '<div class="hist-empty">Aucun indexeur configuré</div>'
+    return
+  }
+  el.innerHTML = list.map(i => `
+    <div class="idx-row">
+      <div class="idx-info">
+        <div class="idx-name">${esc(i.name)}</div>
+        <div class="idx-url">${esc(i.url)}</div>
+      </div>
+      <button class="btn-search" id="sbtn-${i.id}" onclick="openSearch('${i.id}', '${esc(i.name)}')">🔍 Rechercher</button>
+      <button class="abtn abtn-del" onclick="delIndexer('${i.id}')" title="Supprimer">✕</button>
+    </div>`).join('')
+}
+
+async function loadIndexers() {
+  const list = await fetch('/api/indexers').then(r => r.json())
+  renderIndexers(list)
+}
+
+async function addIndexer() {
+  const name   = document.getElementById('idx-name').value.trim()
+  const url    = document.getElementById('idx-url').value.trim()
+  const apiKey = document.getElementById('idx-apikey').value.trim()
+  if (!name || !url || !apiKey) { toast('Remplis tous les champs', 't-err'); return }
+  const r = await fetch('/api/indexers', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, url, api_key: apiKey }),
+  })
+  if (!r.ok) { toast('Erreur : ' + (await r.json()).error, 't-err'); return }
+  document.getElementById('idx-name').value   = ''
+  document.getElementById('idx-url').value    = ''
+  document.getElementById('idx-apikey').value = ''
+  toast('Indexeur ajouté')
+  loadIndexers()
+}
+
+async function delIndexer(id) {
+  await fetch('/api/indexers/' + id, { method: 'DELETE' })
+  toast('Indexeur supprimé')
+  loadIndexers()
+}
+
+async function openSearch(iid, name) {
+  _currentIndexerId = iid
+  document.getElementById('search-modal-label').textContent = name
+  document.getElementById('search-results').innerHTML = '<div class="hist-empty">Chargement…</div>'
+  document.getElementById('search-modal-bg').classList.add('open')
+  const btn = document.getElementById('sbtn-' + iid)
+  if (btn) btn.classList.add('loading')
+  try {
+    const r = await fetch('/api/indexers/' + iid + '/search')
+    const data = await r.json()
+    if (!r.ok) { document.getElementById('search-results').innerHTML = `<div class="hist-empty" style="color:var(--red)">Erreur : ${esc(data.error)}</div>`; return }
+    if (!data.length) { document.getElementById('search-results').innerHTML = '<div class="hist-empty">Aucun résultat</div>'; return }
+    document.getElementById('search-results').innerHTML = data.map(t => `
+      <div class="srow">
+        <div class="sname" title="${esc(t.name)}">${esc(t.name)}</div>
+        <div class="scol">${fmt.bytes(t.size)}</div>
+        <div class="scol c-green">${t.seeders}</div>
+        <div class="scol c-yellow">${t.leechers}</div>
+        <button class="btn-import" id="imp-${t.id}" onclick="importTorrent('${iid}','${t.id}',this)">⬇ Importer</button>
+      </div>`).join('')
+  } finally {
+    if (btn) btn.classList.remove('loading')
+  }
+}
+
+function closeSearch() {
+  document.getElementById('search-modal-bg').classList.remove('open')
+}
+function closeSearchOutside(e) {
+  if (e.target === document.getElementById('search-modal-bg')) closeSearch()
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeCfg(); closeSearch() } })
+
+async function importTorrent(iid, tid, btn) {
+  btn.disabled = true
+  btn.textContent = '…'
+  const r = await fetch(`/api/indexers/${iid}/import/${tid}`, { method: 'POST' })
+  const j = await r.json()
+  if (!r.ok) { toast('⚠ ' + j.error, 't-err'); btn.disabled = false; btn.textContent = '⬇ Importer'; return }
+  btn.textContent = '✓'
+  btn.style.background = 'rgba(45,200,109,.2)'
+  toast('🌱 Importé : ' + j.name)
+  poll()
+}
+
 function fmtDuration(secs) {
   if (!secs || secs < 0) return '—'
   const d = Math.floor(secs / 86400)
@@ -1045,6 +1289,7 @@ async function poll() {
 }
 
 loadCfg()
+loadIndexers()
 poll()
 setInterval(poll, 1500)
 </script>
