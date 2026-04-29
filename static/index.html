@@ -674,6 +674,39 @@ body {
   flex-shrink: 0;
 }
 .search-modal-title { font-size: 13px; font-weight: 700; color: var(--tx); display: flex; align-items: center; gap: 8px; }
+.search-modal-search {
+  display: flex; gap: 8px;
+  padding: 10px 18px;
+  border-bottom: 1px solid var(--bd);
+  flex-shrink: 0;
+  background: rgba(0,0,0,.1);
+}
+.search-modal-search input {
+  flex: 1;
+  background: var(--s2);
+  border: 1px solid var(--bd2);
+  border-radius: var(--r3);
+  color: var(--tx);
+  padding: 7px 12px;
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color .15s;
+}
+.search-modal-search input:focus { border-color: var(--blue); }
+.search-modal-search input::placeholder { color: var(--tx3); }
+.btn-search-go {
+  padding: 7px 16px;
+  background: var(--blue2);
+  color: #fff;
+  border: none;
+  border-radius: var(--r3);
+  font-size: 12px; font-weight: 600;
+  cursor: pointer; transition: background .15s;
+  white-space: nowrap;
+}
+.btn-search-go:hover { background: var(--blue); }
+.btn-search-go:disabled { opacity: .5; pointer-events: none; }
 .search-modal-body { overflow-y: auto; flex: 1; }
 .srow {
   display: grid;
@@ -945,6 +978,10 @@ body {
     <div class="search-modal-head">
       <div class="search-modal-title">🔍 <span id="search-modal-label">Torrents disponibles</span></div>
       <button class="btn-close" onclick="closeSearch()">✕</button>
+    </div>
+    <div class="search-modal-search">
+      <input type="text" id="search-query" placeholder="Rechercher par nom… (vide = top 100 seeders)" onkeydown="if(event.key==='Enter')runSearch()">
+      <button class="btn-search-go" id="search-go-btn" onclick="runSearch()">Chercher</button>
     </div>
     <div class="search-modal-body">
       <div style="display:grid;grid-template-columns:1fr 90px 60px 60px 90px;padding:8px 18px;border-bottom:1px solid var(--bd);background:rgba(0,0,0,.15)">
@@ -1218,12 +1255,28 @@ async function delIndexer(id) {
 async function openSearch(iid, name) {
   _currentIndexerId = iid
   document.getElementById('search-modal-label').textContent = name
-  document.getElementById('search-results').innerHTML = '<div class="hist-empty">Chargement…</div>'
+  document.getElementById('search-query').value = ''
   document.getElementById('search-modal-bg').classList.add('open')
   const btn = document.getElementById('sbtn-' + iid)
   if (btn) btn.classList.add('loading')
+  await _fetchResults(iid, '')
+  if (btn) btn.classList.remove('loading')
+  document.getElementById('search-query').focus()
+}
+
+async function runSearch() {
+  if (!_currentIndexerId) return
+  const q = document.getElementById('search-query').value.trim()
+  await _fetchResults(_currentIndexerId, q)
+}
+
+async function _fetchResults(iid, q) {
+  const goBtn = document.getElementById('search-go-btn')
+  if (goBtn) goBtn.disabled = true
+  document.getElementById('search-results').innerHTML = '<div class="hist-empty">Chargement…</div>'
   try {
-    const r = await fetch('/api/indexers/' + iid + '/search')
+    const url = '/api/indexers/' + iid + '/search' + (q ? '?q=' + encodeURIComponent(q) : '')
+    const r = await fetch(url)
     const data = await r.json()
     if (!r.ok) { document.getElementById('search-results').innerHTML = `<div class="hist-empty" style="color:var(--red)">Erreur : ${esc(data.error)}</div>`; return }
     if (!data.length) { document.getElementById('search-results').innerHTML = '<div class="hist-empty">Aucun résultat</div>'; return }
@@ -1237,7 +1290,7 @@ async function openSearch(iid, name) {
         <button class="btn-import" id="imp-${i}" onclick="importTorrent('${iid}',_searchResults[${i}],this)">⬇ Importer</button>
       </div>`).join('')
   } finally {
-    if (btn) btn.classList.remove('loading')
+    if (goBtn) goBtn.disabled = false
   }
 }
 

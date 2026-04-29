@@ -610,29 +610,44 @@ def search_indexer(iid):
         results.sort(key=lambda x: x['leechers'], reverse=True)
         return jsonify(results[:50])
 
-    url = (f"{idx['url']}/api/torrents"
-           f"?api_token={idx['api_key']}"
-           f"&perPage=50&sortField=leechers&sortDirection=desc")
-    extra = {}
-    if idx.get('cookie'):
-        extra['Cookie'] = idx['cookie']
-    data, err = _tracker_request(url, headers=extra)
-    if err:
-        return jsonify({'error': err}), 502
-    results = []
-    for t in (data.get('data') or []):
-        attr      = t.get('attributes') or t
-        tid       = t.get('id')
-        info_hash = t.get('infoHash') or attr.get('info_hash', '')
-        results.append({
-            'name':      attr.get('name', ''),
-            'size':      attr.get('size', 0),
-            'seeders':   attr.get('seeders', 0),
-            'leechers':  attr.get('leechers', 0),
-            'info_hash': info_hash,
-            'download_url': f"{idx['url']}/api/torrents/{tid}/download?api_token={idx['api_key']}",
-        })
-    return jsonify(results)
+    query = request.args.get('q', '').strip()
+    all_results = []
+    page = 1
+    max_pages = 1 if query else 2
+    while page <= max_pages:
+        url = (f"{idx['url']}/api/torrents"
+               f"?api_token={idx['api_key']}"
+               f"&perPage=50&page={page}&sortField=seeders&sortDirection=desc")
+        if query:
+            url += f"&name={urllib.parse.quote(query)}"
+        extra = {}
+        if idx.get('cookie'):
+            extra['Cookie'] = idx['cookie']
+        data, err = _tracker_request(url, headers=extra)
+        if err:
+            if not all_results:
+                return jsonify({'error': err}), 502
+            break
+        batch = data.get('data') or []
+        if not batch:
+            break
+        for t in batch:
+            attr      = t.get('attributes') or t
+            tid       = t.get('id')
+            info_hash = (t.get('attributes') or {}).get('infoHash') or t.get('infoHash') or attr.get('info_hash', '')
+            all_results.append({
+                'name':         attr.get('name', ''),
+                'size':         attr.get('size', 0),
+                'seeders':      int(attr.get('seeders', 0)),
+                'leechers':     int(attr.get('leechers', 0)),
+                'info_hash':    info_hash,
+                'download_url': f"{idx['url']}/api/torrents/{tid}/download?api_token={idx['api_key']}",
+            })
+        if len(batch) < 50:
+            break
+        page += 1
+    all_results.sort(key=lambda x: x['seeders'] + x['leechers'], reverse=True)
+    return jsonify(all_results[:100])
 
 @app.route('/api/indexers/<iid>/import', methods=['POST'])
 def import_torrent(iid):
