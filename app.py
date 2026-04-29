@@ -247,7 +247,7 @@ def _discord(title: str, description: str, color: int, fields: list = None, url:
     payload = json.dumps({'embeds': [embed]}).encode()
     req = urllib.request.Request(
         wh, data=payload,
-        headers={'Content-Type': 'application/json'},
+        headers={'Content-Type': 'application/json', 'User-Agent': 'JokerSeed/1.0'},
         method='POST'
     )
     urllib.request.urlopen(req, context=ssl_ctx, timeout=6)
