@@ -894,7 +894,13 @@ body {
         Historique
         <span class="count-pill" id="hist-cnt">0</span>
       </div>
-      <button class="btn-clear" onclick="clearHistory()">✕ Effacer</button>
+      <div style="display:flex;align-items:center;gap:16px">
+        <div style="text-align:right">
+          <div style="font-size:13px;font-weight:700;color:var(--green)" id="lifetime-val">—</div>
+          <div style="font-size:10px;color:var(--tx3)">total uploadé (historique)</div>
+        </div>
+        <button class="btn-clear" onclick="clearHistory()">✕ Effacer</button>
+      </div>
     </div>
     <div class="table-head" style="grid-template-columns:1fr 100px 110px 70px 110px 110px">
       <div class="th">Torrent</div>
@@ -1398,6 +1404,8 @@ async function poll() {
   document.getElementById('st-up').textContent     = fmt.bytes(stats.uploaded)
   document.getElementById('st-active').textContent = stats.active
   document.getElementById('st-total').textContent  = stats.total
+  const lv = document.getElementById('lifetime-val')
+  if (lv) lv.textContent = fmt.bytes(stats.lifetime_uploaded || 0)
 }
 
 loadCfg()

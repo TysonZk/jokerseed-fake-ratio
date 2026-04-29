@@ -133,14 +133,15 @@ def gen_key() -> str:
 
 def _default_config() -> dict:
     return {
-        'min_rate':     8000,
-        'max_rate':     18000,
-        'simultaneous': 5,
-        'client':       'qbittorrent-4.3.9',
-        'port':         49152,
-        'jitter':       120,
-        'proxy':        '',
-        'max_ratio':    5.0,
+        'min_rate':          8000,
+        'max_rate':          18000,
+        'simultaneous':      5,
+        'client':            'qbittorrent-4.3.9',
+        'port':              49152,
+        'jitter':            120,
+        'proxy':             '',
+        'max_ratio':         5.0,
+        'lifetime_uploaded': 0,
     }
 
 def load_config() -> dict:
@@ -465,8 +466,10 @@ def del_torrent(sid):
             'removed_at':  time.time(),
             'announce_url': snap['announce_url'],
         })
+        config['lifetime_uploaded'] = config.get('lifetime_uploaded', 0) + snap['uploaded']
     save_sessions(sessions)
     save_history(history)
+    save_config(config)
     executor.submit(_send_stopped, snap)
     return '', 204
 
@@ -516,11 +519,13 @@ def put_config():
 @app.route('/api/stats', methods=['GET'])
 def get_stats():
     with lock:
-        spd = sum(s['speed']    for s in sessions.values() if s['status'] == 'seeding')
-        up  = sum(s['uploaded'] for s in sessions.values())
-        act = sum(1 for s in sessions.values() if s['status'] == 'seeding')
+        spd      = sum(s['speed']    for s in sessions.values() if s['status'] == 'seeding')
+        up       = sum(s['uploaded'] for s in sessions.values())
+        act      = sum(1 for s in sessions.values() if s['status'] == 'seeding')
+        lifetime = config.get('lifetime_uploaded', 0) + up
     return jsonify({'speed': round(spd, 1), 'uploaded': up,
-                    'active': act, 'total': len(sessions)})
+                    'active': act, 'total': len(sessions),
+                    'lifetime_uploaded': lifetime})
 
 @app.route('/api/history', methods=['GET'])
 def get_history():
