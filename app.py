@@ -143,6 +143,7 @@ def _default_config() -> dict:
         'max_ratio':         5.0,
         'lifetime_uploaded': 0,
         'disable_idle':      False,
+        'webhook_url':       '',
     }
 
 def load_config() -> dict:
@@ -229,6 +230,31 @@ ssl_ctx  = ssl.create_default_context()
 ssl_ctx.check_hostname = False
 ssl_ctx.verify_mode    = ssl.CERT_NONE
 
+def _fmt_bytes(n):
+    for unit in ('B', 'KB', 'MB', 'GB', 'TB'):
+        if n < 1024:
+            return f'{n:.1f} {unit}'
+        n /= 1024
+    return f'{n:.1f} PB'
+
+def _discord(title: str, description: str, color: int, fields: list = None):
+    url = config.get('webhook_url', '').strip()
+    if not url:
+        return
+    embed = {'title': title, 'description': description, 'color': color}
+    if fields:
+        embed['fields'] = fields
+    payload = json.dumps({'embeds': [embed]}).encode()
+    try:
+        req = urllib.request.Request(
+            url, data=payload,
+            headers={'Content-Type': 'application/json'},
+            method='POST'
+        )
+        urllib.request.urlopen(req, context=ssl_ctx, timeout=6)
+    except Exception:
+        pass
+
 def public(s: dict) -> dict:
     return {k: v for k, v in s.items() if k not in ('info_hash', 'peer_id')}
 
@@ -298,10 +324,19 @@ def announce_one(sid: str):
         with lock:
             s = sessions.get(sid)
             if s:
+                prev_status        = s.get('status')
                 s['status']        = 'error'
                 s['error']         = str(e)
                 s['speed']         = 0.0
                 s['last_announce'] = time.time()
+                name               = s['name']
+        if prev_status != 'error':
+            executor.submit(_discord,
+                '❌ Erreur tracker',
+                f'**{name}**',
+                0xFF5F57,
+                [{'name': 'Erreur', 'value': str(e)[:1024], 'inline': False}]
+            )
 
 def _send_stopped(snap: dict):
     if snap.get('last_announce', 0) == 0:
@@ -377,6 +412,18 @@ def stats_updater_loop():
                     net   = s['uploaded'] - s.get('ratio_baseline', 0)
                     ratio = net / s['size'] if s['size'] > 0 else 0
                     if max_ratio > 0 and ratio >= max_ratio:
+                        if not s.get('_cap_notified'):
+                            s['_cap_notified'] = True
+                            executor.submit(_discord,
+                                '🏁 Plafond de ratio atteint',
+                                f'**{s["name"]}** a atteint le ratio maximum configuré.',
+                                0xF0A830,
+                                [
+                                    {'name': 'Ratio',    'value': f'{ratio:.2f} / {max_ratio}', 'inline': True},
+                                    {'name': 'Uploadé',  'value': _fmt_bytes(s["uploaded"]),    'inline': True},
+                                    {'name': 'Taille',   'value': _fmt_bytes(s["size"]),         'inline': True},
+                                ]
+                            )
                         spd = round(random.uniform(0, 30), 1)
                         s['uploaded'] += int(spd * 1024 * interval)
                         s['speed']     = spd
@@ -479,6 +526,20 @@ def del_torrent(sid):
     save_history(history)
     save_config(config)
     executor.submit(_send_stopped, snap)
+    duration = int(time.time() - snap.get('added_at', time.time()))
+    h, m = divmod(duration // 60, 60)
+    dur_str = f'{h}h {m}m' if h else f'{m}m'
+    final_ratio = round(snap['uploaded'] / snap['size'], 2) if snap['size'] > 0 else 0
+    executor.submit(_discord,
+        '🛑 Torrent retiré',
+        f'**{snap["name"]}**',
+        0x9B6DFF,
+        [
+            {'name': 'Uploadé',  'value': _fmt_bytes(snap["uploaded"]), 'inline': True},
+            {'name': 'Ratio',    'value': str(final_ratio),             'inline': True},
+            {'name': 'Durée',    'value': dur_str,                      'inline': True},
+        ]
+    )
     return '', 204
 
 @app.route('/api/torrents/<sid>/pause', methods=['POST'])

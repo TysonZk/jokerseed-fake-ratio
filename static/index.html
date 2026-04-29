@@ -959,6 +959,11 @@ body {
           <span class="hint">Laisser vide pour connexion directe / WireGuard</span>
         </div>
         <div class="field full">
+          <label>Webhook Discord (optionnel)</label>
+          <input type="text" id="c-webhook" placeholder="https://discord.com/api/webhooks/…">
+          <span class="hint">Notifications : ratio cap atteint, torrent retiré, erreur tracker</span>
+        </div>
+        <div class="field full">
           <label>Périodes d'inactivité</label>
           <label class="toggle" style="margin-top:5px">
             <input type="checkbox" id="c-disable-idle">
@@ -1079,7 +1084,8 @@ async function loadCfg() {
   document.getElementById('c-sim').value    = cfg.simultaneous
   document.getElementById('c-port').value   = cfg.port
   document.getElementById('c-jitter').value = cfg.jitter
-  document.getElementById('c-proxy').value  = cfg.proxy || ''
+  document.getElementById('c-proxy').value   = cfg.proxy || ''
+  document.getElementById('c-webhook').value = cfg.webhook_url || ''
   sel.value = cfg.client
   _maxRate  = cfg.max_rate
   _maxRatio = cfg.max_ratio
@@ -1105,6 +1111,7 @@ async function saveCfg() {
     port:         +document.getElementById('c-port').value,
     jitter:       +document.getElementById('c-jitter').value,
     proxy:         document.getElementById('c-proxy').value.trim(),
+    webhook_url:   document.getElementById('c-webhook').value.trim(),
     max_ratio:     document.getElementById('c-ratio-en').checked
                      ? +document.getElementById('c-ratio').value
                      : 0,
