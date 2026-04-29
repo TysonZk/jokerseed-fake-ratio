@@ -1,5 +1,5 @@
 import os, hashlib, random, time, threading, uuid, json
-import urllib.parse, urllib.request, ssl
+import urllib.parse, urllib.request, urllib.error, ssl
 from concurrent.futures import ThreadPoolExecutor
 from flask import Flask, request, jsonify, send_from_directory
 
@@ -557,6 +557,22 @@ def del_indexer(iid):
     save_indexers(indexers)
     return '', 204
 
+def _tracker_request(url):
+    req = urllib.request.Request(url, headers={
+        'Accept': 'application/json', 'User-Agent': 'Mozilla/5.0'})
+    try:
+        res = urllib.request.urlopen(req, context=ssl_ctx, timeout=15)
+        return json.loads(res.read()), None
+    except urllib.error.HTTPError as e:
+        try:
+            body = json.loads(e.read())
+            msg  = body.get('message') or body.get('error') or str(e)
+        except Exception:
+            msg = f'HTTP {e.code}: {e.reason}'
+        return None, msg
+    except Exception as e:
+        return None, str(e)
+
 @app.route('/api/indexers/<iid>/search', methods=['GET'])
 def search_indexer(iid):
     idx = indexers.get(iid)
@@ -565,24 +581,20 @@ def search_indexer(iid):
     url = (f"{idx['url']}/api/torrents"
            f"?api_token={idx['api_key']}"
            f"&perPage=50&sortField=leechers&sortDirection=desc")
-    try:
-        req = urllib.request.Request(url, headers={
-            'Accept': 'application/json', 'User-Agent': 'Mozilla/5.0'})
-        res = urllib.request.urlopen(req, context=ssl_ctx, timeout=15)
-        data = json.loads(res.read())
-        results = []
-        for t in data.get('data', []):
-            attr = t.get('attributes', {})
-            results.append({
-                'id':       t.get('id'),
-                'name':     attr.get('name', ''),
-                'size':     attr.get('size', 0),
-                'seeders':  attr.get('seeders', 0),
-                'leechers': attr.get('leechers', 0),
-            })
-        return jsonify(results)
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+    data, err = _tracker_request(url)
+    if err:
+        return jsonify({'error': err}), 502
+    results = []
+    for t in (data.get('data') or []):
+        attr = t.get('attributes', {})
+        results.append({
+            'id':       t.get('id'),
+            'name':     attr.get('name', ''),
+            'size':     attr.get('size', 0),
+            'seeders':  attr.get('seeders', 0),
+            'leechers': attr.get('leechers', 0),
+        })
+    return jsonify(results)
 
 @app.route('/api/indexers/<iid>/import/<tid>', methods=['POST'])
 def import_torrent(iid, tid):
@@ -594,6 +606,16 @@ def import_torrent(iid, tid):
         req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
         res = urllib.request.urlopen(req, context=ssl_ctx, timeout=15)
         raw = res.read()
+    except urllib.error.HTTPError as e:
+        try:
+            body = json.loads(e.read())
+            msg  = body.get('message') or body.get('error') or str(e)
+        except Exception:
+            msg = f'HTTP {e.code}: {e.reason}'
+        return jsonify({'error': msg}), 502
+    except Exception as e:
+        return jsonify({'error': str(e)}), 502
+    try:
         info = parse_torrent(raw)
     except Exception as e:
         return jsonify({'error': str(e)}), 400
