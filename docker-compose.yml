@@ -1,0 +1,11 @@
+services:
+  fakeratio:
+    build: .
+    image: fakeratio:latest
+    container_name: fakeratio
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - ./data:/data
+    environment:
+      - DATA_DIR=/data

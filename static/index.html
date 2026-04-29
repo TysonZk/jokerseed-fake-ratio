@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>JokerSeed</title>
+<link rel="icon" href="/favicon.ico">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:       #07090d;
+  --s1:       #0d1117;
+  --s2:       #131920;
+  --s3:       #1a2230;
+  --s4:       #202c3c;
+  --bd:       #1e2a38;
+  --bd2:      #253345;
+  --bd3:      #2e3f55;
+  --tx:       #e2eaf4;
+  --tx2:      #8fa3bb;
+  --tx3:      #4d6278;
+  --blue:     #4f8fff;
+  --blue2:    #2d6be4;
+  --purple:   #9b6dff;
+  --green:    #2dc86d;
+  --green2:   #1a8a48;
+  --red:      #ff5f57;
+  --yellow:   #f0a830;
+  --r:        12px;
+  --r2:       8px;
+  --r3:       6px;
+}
+
+html { height: 100%; }
+body {
+  min-height: 100%;
+  background: var(--bg);
+  color: var(--tx);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--bd3); border-radius: 3px; }
+
+/* ════════════════════════════════════
+   HEADER
+════════════════════════════════════ */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 28px;
+  height: 62px;
+  background: rgba(13,17,23,.9);
+  border-bottom: 1px solid var(--bd);
+  backdrop-filter: blur(16px);
+  position: sticky; top: 0; z-index: 50;
+  box-shadow: 0 1px 0 rgba(255,255,255,.03);
+}
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+}
+.logo img {
+  width: 30px; height: 30px;
+  border-radius: 8px;
+  image-rendering: pixelated;
+  box-shadow: 0 0 12px rgba(79,143,255,.3);
+}
+.logo-text {
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -.5px;
+  background: linear-gradient(135deg, var(--tx) 0%, var(--blue) 60%, var(--purple) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.header-right { display: flex; align-items: center; gap: 8px; }
+.online-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 6px var(--green);
+  animation: pulse-dot 2.5s infinite;
+}
+@keyframes pulse-dot { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(.75)} }
+
+.btn-icon {
+  display: flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px;
+  border-radius: var(--r2);
+  border: 1px solid var(--bd2);
+  background: transparent;
+  color: var(--tx2);
+  cursor: pointer;
+  font-size: 15px;
+  transition: all .15s;
+}
+.btn-icon:hover { background: var(--s3); color: var(--tx); border-color: var(--bd3); }
+.btn-icon.active { background: rgba(79,143,255,.12); color: var(--blue); border-color: rgba(79,143,255,.3); }
+
+/* ════════════════════════════════════
+   WRAPPER
+════════════════════════════════════ */
+.wrap { max-width: 1040px; margin: 0 auto; padding: 28px 20px 48px; }
+
+/* ════════════════════════════════════
+   STAT CARDS
+════════════════════════════════════ */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 24px;
+}
+@media (max-width: 700px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
+
+.stat-card {
+  background: var(--s1);
+  border: 1px solid var(--bd);
+  border-radius: var(--r);
+  padding: 18px 20px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color .2s, transform .2s;
+  cursor: default;
+}
+.stat-card:hover { border-color: var(--bd3); transform: translateY(-1px); }
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 2px;
+  border-radius: var(--r) var(--r) 0 0;
+}
+.stat-card.c-blue::before   { background: linear-gradient(90deg, var(--blue2), var(--blue)); }
+.stat-card.c-green::before  { background: linear-gradient(90deg, var(--green2), var(--green)); }
+.stat-card.c-purple::before { background: linear-gradient(90deg, #6240d0, var(--purple)); }
+.stat-card.c-yellow::before { background: linear-gradient(90deg, #c07800, var(--yellow)); }
+
+.stat-icon {
+  font-size: 20px;
+  margin-bottom: 12px;
+  display: block;
+}
+.stat-val {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -.5px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  margin-bottom: 4px;
+  display: block;
+}
+.c-blue .stat-val   { color: var(--blue); }
+.c-green .stat-val  { color: var(--green); }
+.c-purple .stat-val { color: var(--purple); }
+.c-yellow .stat-val { color: var(--yellow); }
+.stat-lbl {
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: .7px;
+  color: var(--tx3);
+}
+.stat-glow {
+  position: absolute;
+  bottom: -20px; right: -10px;
+  width: 80px; height: 80px;
+  border-radius: 50%;
+  opacity: .06;
+  filter: blur(20px);
+}
+.c-blue .stat-glow   { background: var(--blue); }
+.c-green .stat-glow  { background: var(--green); }
+.c-purple .stat-glow { background: var(--purple); }
+.c-yellow .stat-glow { background: var(--yellow); }
+
+/* ════════════════════════════════════
+   TORRENT PANEL
+════════════════════════════════════ */
+.panel {
+  background: var(--s1);
+  border: 1px solid var(--bd);
+  border-radius: var(--r);
+  overflow: hidden;
+}
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--bd);
+  background: linear-gradient(180deg, var(--s2) 0%, var(--s1) 100%);
+}
+.panel-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--tx2);
+  text-transform: uppercase;
+  letter-spacing: .8px;
+}
+.panel-title-icon { font-size: 15px; }
+.count-pill {
+  background: var(--s3);
+  border: 1px solid var(--bd2);
+  color: var(--tx2);
+  border-radius: 20px;
+  padding: 1px 9px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.btn-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 16px;
+  background: linear-gradient(135deg, var(--blue2), var(--blue));
+  color: #fff;
+  border: none;
+  border-radius: var(--r2);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 2px 12px rgba(79,143,255,.3);
+  transition: filter .15s, transform .1s, box-shadow .15s;
+}
+.btn-add:hover { filter: brightness(1.1); box-shadow: 0 4px 18px rgba(79,143,255,.4); }
+.btn-add:active { transform: scale(.97); }
+.btn-add svg { flex-shrink: 0; }
+#finput { display: none; }
+
+/* ════════════════════════════════════
+   TABLE HEADER
+════════════════════════════════════ */
+.table-head {
+  display: grid;
+  grid-template-columns: 1fr 120px 110px 75px 70px 70px 90px 100px;
+  padding: 8px 20px;
+  border-bottom: 1px solid var(--bd);
+  background: rgba(0,0,0,.15);
+}
+.th {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .7px;
+  color: var(--tx3);
+}
+@media (max-width: 800px) {
+  .table-head { display: none; }
+}
+
+/* ════════════════════════════════════
+   TORRENT ROWS
+════════════════════════════════════ */
+.tlist { min-height: 80px; }
+
+.trow {
+  display: grid;
+  grid-template-columns: 1fr 120px 110px 75px 70px 70px 90px 100px;
+  align-items: center;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--bd);
+  position: relative;
+  transition: background .12s;
+  gap: 0 4px;
+}
+.trow:last-child { border-bottom: none; }
+.trow:hover { background: rgba(255,255,255,.018); }
+
+/* left color stripe */
+.trow::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+}
+.trow.seeding::before { background: var(--green); }
+.trow.error::before   { background: var(--red); }
+.trow.paused::before  { background: var(--tx3); }
+.trow.waiting::before { background: var(--yellow); animation: stripe-blink 2s infinite; }
+@keyframes stripe-blink { 0%,100%{opacity:.4} 50%{opacity:1} }
+
+/* name col */
+.tcol-name { min-width: 0; padding-right: 12px; }
+.tname {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--tx);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 4px;
+}
+.tspeed-bar {
+  height: 3px;
+  background: var(--s4);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.tspeed-fill {
+  height: 100%;
+  border-radius: 3px;
+  background: linear-gradient(90deg, var(--green2), var(--green));
+  transition: width .8s ease;
+}
+
+/* data cols */
+.tcol {
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  padding-right: 8px;
+}
+.tcol .lbl { font-size: 10px; font-weight: 500; color: var(--tx3); display: block; margin-top: 1px; }
+.c-blue   { color: var(--blue); }
+.c-green  { color: var(--green); }
+.c-yellow { color: var(--yellow); }
+.c-purple { color: var(--purple); }
+.c-red    { color: var(--red); }
+.c-muted  { color: var(--tx2); }
+
+/* actions col */
+.tcol-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+/* error msg */
+.terr {
+  font-size: 10px;
+  color: var(--red);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 2px;
+}
+
+/* ════════════════════════════════════
+   BADGES
+════════════════════════════════════ */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+  white-space: nowrap;
+  border: 1px solid transparent;
+}
+.badge-dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
+.b-green  { background: rgba(45,200,109,.1); color: var(--green); border-color: rgba(45,200,109,.2); }
+.b-green .badge-dot  { background: var(--green); animation: bdot 2s infinite; }
+.b-red    { background: rgba(255,95,87,.1);  color: var(--red);   border-color: rgba(255,95,87,.2); }
+.b-red .badge-dot    { background: var(--red); }
+.b-yellow { background: rgba(240,168,48,.1); color: var(--yellow);border-color: rgba(240,168,48,.2); }
+.b-yellow .badge-dot { background: var(--yellow); animation: bdot 1.5s infinite; }
+.b-muted  { background: rgba(77,98,120,.1);  color: var(--tx3);   border-color: rgba(77,98,120,.2); }
+.b-muted .badge-dot  { background: var(--tx3); }
+.b-purple { background: rgba(155,109,255,.1); color: var(--purple); border-color: rgba(155,109,255,.2); }
+.b-purple .badge-dot { background: var(--purple); }
+@keyframes bdot { 0%,100%{opacity:1} 50%{opacity:.2} }
+
+/* ════════════════════════════════════
+   ACTION BUTTONS
+════════════════════════════════════ */
+.abtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px; height: 28px;
+  border-radius: var(--r3);
+  border: 1px solid transparent;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  transition: all .12s;
+}
+.abtn:hover { filter: brightness(1.2); }
+.abtn:active { transform: scale(.93); }
+.abtn-pause  { background: rgba(240,168,48,.1); color: var(--yellow); border-color: rgba(240,168,48,.2); }
+.abtn-resume { background: rgba(79,143,255,.1); color: var(--blue);   border-color: rgba(79,143,255,.2); }
+.abtn-del    { background: rgba(255,95,87,.1);  color: var(--red);    border-color: rgba(255,95,87,.2); }
+
+/* ════════════════════════════════════
+   EMPTY STATE
+════════════════════════════════════ */
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 56px 24px;
+  color: var(--tx3);
+  gap: 10px;
+}
+.empty-icon { font-size: 44px; opacity: .25; }
+.empty-title { font-size: 14px; font-weight: 600; color: var(--tx2); }
+.empty-sub { font-size: 12px; }
+
+/* ════════════════════════════════════
+   CONFIG MODAL
+════════════════════════════════════ */
+.modal-bg {
+  position: fixed; inset: 0;
+  background: rgba(7,9,13,.7);
+  backdrop-filter: blur(6px);
+  z-index: 100;
+  opacity: 0; pointer-events: none;
+  transition: opacity .2s;
+}
+.modal-bg.open { opacity: 1; pointer-events: all; }
+
+.modal {
+  position: fixed;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -48%);
+  width: 560px; max-width: calc(100vw - 32px);
+  background: var(--s1);
+  border: 1px solid var(--bd2);
+  border-radius: var(--r);
+  box-shadow: 0 24px 64px rgba(0,0,0,.6);
+  z-index: 101;
+  opacity: 0; pointer-events: none;
+  transition: opacity .2s, transform .2s;
+}
+.modal-bg.open .modal { opacity: 1; pointer-events: all; transform: translate(-50%, -50%); }
+.modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--bd);
+}
+.modal-title { font-size: 14px; font-weight: 700; color: var(--tx); display: flex; align-items: center; gap: 8px; }
+.btn-close {
+  width: 28px; height: 28px;
+  border-radius: var(--r3);
+  border: 1px solid var(--bd2);
+  background: transparent;
+  color: var(--tx3);
+  cursor: pointer;
+  font-size: 14px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .12s;
+}
+.btn-close:hover { background: var(--s3); color: var(--tx); }
+
+.modal-body { padding: 20px; }
+.cfg-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+.cfg-grid .full { grid-column: 1 / -1; }
+.field { display: flex; flex-direction: column; gap: 5px; }
+.field label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .6px;
+  color: var(--tx3);
+}
+.field input, .field select {
+  background: var(--s2);
+  border: 1px solid var(--bd2);
+  border-radius: var(--r3);
+  color: var(--tx);
+  padding: 8px 12px;
+  font-size: 13px;
+  font-family: inherit;
+  width: 100%;
+  outline: none;
+  transition: border-color .15s, box-shadow .15s;
+}
+.field input[type=number] { -moz-appearance: textfield; }
+.field input::-webkit-outer-spin-button,
+.field input::-webkit-inner-spin-button { -webkit-appearance: none; }
+.field input:focus, .field select:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(79,143,255,.1);
+}
+.field select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='%234d6278'%3E%3Cpath d='M0 0l5 6 5-6z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 28px;
+  cursor: pointer;
+}
+.field select option { background: var(--s2); }
+.field .hint { font-size: 11px; color: var(--tx3); }
+
+.modal-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  border-top: 1px solid var(--bd);
+  background: rgba(0,0,0,.1);
+}
+.saved-msg { font-size: 12px; color: var(--green); display: flex; align-items: center; gap: 5px; opacity: 0; transition: opacity .25s; }
+.saved-msg.on { opacity: 1; }
+.btn-save {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 8px 20px;
+  background: linear-gradient(135deg, var(--green2), var(--green));
+  color: #fff;
+  border: none;
+  border-radius: var(--r2);
+  font-size: 13px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  box-shadow: 0 2px 10px rgba(45,200,109,.25);
+  transition: filter .15s;
+}
+.btn-save:hover { filter: brightness(1.1); }
+
+/* ════════════════════════════════════
+   DRAG OVERLAY
+════════════════════════════════════ */
+.drag-overlay {
+  position: fixed; inset: 0;
+  background: rgba(7,9,13,.85);
+  backdrop-filter: blur(4px);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 16px;
+  z-index: 200;
+  border: 3px dashed var(--blue);
+  margin: 12px;
+  border-radius: var(--r);
+  opacity: 0; pointer-events: none;
+  transition: opacity .15s;
+}
+.drag-overlay.show { opacity: 1; pointer-events: all; }
+.drag-overlay-icon { font-size: 52px; }
+.drag-overlay-txt { font-size: 18px; font-weight: 700; color: var(--blue); }
+
+/* ════════════════════════════════════
+   TOAST
+════════════════════════════════════ */
+.toast {
+  position: fixed;
+  bottom: 22px; left: 50%;
+  transform: translateX(-50%) translateY(10px);
+  background: var(--s2);
+  border: 1px solid var(--bd3);
+  border-radius: var(--r2);
+  padding: 10px 18px;
+  font-size: 12px; font-weight: 500;
+  color: var(--tx2);
+  box-shadow: 0 8px 28px rgba(0,0,0,.5);
+  opacity: 0; pointer-events: none;
+  transition: all .2s; z-index: 999;
+  white-space: nowrap;
+}
+.toast.on { opacity: 1; transform: translateX(-50%) translateY(0); }
+.toast.t-ok  { border-color: rgba(45,200,109,.3); color: var(--green); background: rgba(45,200,109,.07); }
+.toast.t-err { border-color: rgba(255,95,87,.3);  color: var(--red);   background: rgba(255,95,87,.07); }
+
+/* ════════════════════════════════════
+   TOGGLE SWITCH
+════════════════════════════════════ */
+.toggle {
+  display: inline-flex; align-items: center; gap: 8px;
+  cursor: pointer; user-select: none;
+}
+.toggle input { display: none; }
+.toggle-track {
+  width: 38px; height: 21px;
+  background: var(--s3);
+  border: 1px solid var(--bd2);
+  border-radius: 21px;
+  position: relative;
+  flex-shrink: 0;
+  transition: background .2s, border-color .2s;
+}
+.toggle input:checked + .toggle-track {
+  background: rgba(45,200,109,.2);
+  border-color: rgba(45,200,109,.45);
+}
+.toggle-thumb {
+  position: absolute; top: 2px; left: 2px;
+  width: 15px; height: 15px;
+  background: var(--tx3);
+  border-radius: 50%;
+  transition: transform .2s, background .2s;
+}
+.toggle input:checked + .toggle-track .toggle-thumb {
+  transform: translateX(17px);
+  background: var(--green);
+}
+.toggle-lbl { font-size: 12px; color: var(--tx2); }
+</style>
+</head>
+<body>
+
+<!-- ── Header ── -->
+<header class="header">
+  <a class="logo" href="/">
+    <img src="/favicon.ico" alt="JokerSeed">
+    <span class="logo-text">JokerSeed</span>
+  </a>
+  <div class="header-right">
+    <span class="online-dot" title="En ligne"></span>
+    <button class="btn-icon" id="cfg-btn" onclick="openCfg()" title="Paramètres">⚙</button>
+  </div>
+</header>
+
+<!-- ── Main ── -->
+<div class="wrap">
+
+  <!-- Stats -->
+  <div class="stats-grid">
+    <div class="stat-card c-blue">
+      <span class="stat-icon">⚡</span>
+      <span class="stat-val" id="st-speed">—</span>
+      <span class="stat-lbl">Vitesse upload</span>
+      <div class="stat-glow"></div>
+    </div>
+    <div class="stat-card c-green">
+      <span class="stat-icon">🌱</span>
+      <span class="stat-val" id="st-up">0 B</span>
+      <span class="stat-lbl">Total uploadé</span>
+      <div class="stat-glow"></div>
+    </div>
+    <div class="stat-card c-purple">
+      <span class="stat-icon">📡</span>
+      <span class="stat-val" id="st-active">0</span>
+      <span class="stat-lbl">Seeds actifs</span>
+      <div class="stat-glow"></div>
+    </div>
+    <div class="stat-card c-yellow">
+      <span class="stat-icon">📋</span>
+      <span class="stat-val" id="st-total">0</span>
+      <span class="stat-lbl">Total torrents</span>
+      <div class="stat-glow"></div>
+    </div>
+  </div>
+
+  <!-- Torrent panel -->
+  <div class="panel">
+    <div class="panel-header">
+      <div class="panel-title">
+        <span class="panel-title-icon">🌱</span>
+        Torrents
+        <span class="count-pill" id="cnt">0</span>
+      </div>
+      <button class="btn-add" onclick="document.getElementById('finput').click()">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><path d="M6.5 1a.5.5 0 00-1 0v4.5H1a.5.5 0 000 1h4.5V11a.5.5 0 001 0V6.5H11a.5.5 0 000-1H6.5V1z"/></svg>
+        Ajouter un torrent
+      </button>
+      <input type="file" id="finput" accept=".torrent" multiple>
+    </div>
+
+    <div class="table-head">
+      <div class="th">Torrent</div>
+      <div class="th">Vitesse</div>
+      <div class="th">Uploadé</div>
+      <div class="th">Ratio</div>
+      <div class="th">Seeders</div>
+      <div class="th">Leechers</div>
+      <div class="th">Announce</div>
+      <div class="th" style="text-align:right">Statut / Actions</div>
+    </div>
+
+    <div class="tlist" id="tlist">
+      <div class="empty">
+        <div class="empty-icon">🌱</div>
+        <div class="empty-title">Aucun torrent actif</div>
+        <div class="empty-sub">Clique sur « Ajouter un torrent » ou glisse un .torrent ici</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── Config modal ── -->
+<div class="modal-bg" id="modal-bg" onclick="closeCfgOutside(event)">
+  <div class="modal" id="modal">
+    <div class="modal-head">
+      <div class="modal-title">⚙ Configuration</div>
+      <button class="btn-close" onclick="closeCfg()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="cfg-grid">
+        <div class="field">
+          <label>Vitesse min (KB/s)</label>
+          <input type="number" id="c-min" min="100" step="100">
+          <span class="hint">Minimum annoncé au tracker</span>
+        </div>
+        <div class="field">
+          <label>Vitesse max (KB/s)</label>
+          <input type="number" id="c-max" min="100" step="100">
+          <span class="hint">Maximum annoncé au tracker</span>
+        </div>
+        <div class="field">
+          <label>Seeds simultanés</label>
+          <input type="number" id="c-sim" min="1" max="50">
+          <span class="hint">Nombre de torrents actifs en même temps</span>
+        </div>
+        <div class="field">
+          <label>Port annoncé</label>
+          <input type="number" id="c-port" min="1024" max="65535">
+          <span class="hint">Port déclaré aux trackers</span>
+        </div>
+        <div class="field">
+          <label>Jitter max (secondes)</label>
+          <input type="number" id="c-jitter" min="0" max="600">
+          <span class="hint">Délai aléatoire avant chaque announce</span>
+        </div>
+        <div class="field">
+          <label>Client simulé</label>
+          <select id="c-client"></select>
+          <span class="hint">Peer-ID + User-Agent envoyés</span>
+        </div>
+        <div class="field full">
+          <label>Proxy HTTP (optionnel)</label>
+          <input type="text" id="c-proxy" placeholder="http://user:pass@host:3128">
+          <span class="hint">Laisser vide pour connexion directe / WireGuard</span>
+        </div>
+        <div class="field full">
+          <label>Plafond de ratio (anti-ban)</label>
+          <label class="toggle" style="margin-top:5px">
+            <input type="checkbox" id="c-ratio-en" onchange="toggleRatio()">
+            <span class="toggle-track"><span class="toggle-thumb"></span></span>
+            <span class="toggle-lbl">Stopper quasi l'upload au-delà d'un ratio max</span>
+          </label>
+          <div id="ratio-num" style="display:none;flex-direction:column;gap:5px;margin-top:10px">
+            <span style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--tx3)">Ratio maximum</span>
+            <div style="display:flex;align-items:center;gap:10px">
+              <input type="number" id="c-ratio" min="1" max="100" step="0.5">
+              <span style="font-size:12px;color:var(--tx3)">× la taille du fichier</span>
+            </div>
+          </div>
+          <span class="hint" style="margin-top:6px">Au-delà du ratio, l'upload tombe à ~0 — évite des ratios suspects</span>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <div class="saved-msg" id="saved">✓ Configuration sauvegardée</div>
+      <button class="btn-save" onclick="saveCfg()">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        Sauvegarder
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Drag overlay ── -->
+<div class="drag-overlay" id="drag-overlay">
+  <div class="drag-overlay-icon">🌱</div>
+  <div class="drag-overlay-txt">Dépose tes fichiers .torrent ici</div>
+</div>
+
+<!-- ── Toast ── -->
+<div class="toast" id="toast"></div>
+
+<script>
+let _maxRate = 18000
+let _maxRatio = 0
+
+// ── Formatters ───────────────────────────────────────────────────────────────
+const fmt = {
+  speed(v) {
+    if (!v) return '0 KB/s'
+    return v >= 1024 ? (v/1024).toFixed(2)+' MB/s' : Math.round(v)+' KB/s'
+  },
+  bytes(b) {
+    if (b >= 1e12) return (b/1e12).toFixed(2)+' TB'
+    if (b >= 1e9)  return (b/1e9).toFixed(2)+' GB'
+    if (b >= 1e6)  return (b/1e6).toFixed(1)+' MB'
+    if (b >= 1e3)  return Math.round(b/1e3)+' KB'
+    return b+' B'
+  },
+  ts(t) { return t ? new Date(t*1000).toLocaleTimeString('fr-FR') : '—' },
+}
+const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')
+
+// ── Toast ────────────────────────────────────────────────────────────────────
+let _tt
+function toast(msg, type='t-ok') {
+  const el = document.getElementById('toast')
+  clearTimeout(_tt)
+  el.textContent = msg
+  el.className = `toast on ${type}`
+  _tt = setTimeout(() => el.classList.remove('on'), 3200)
+}
+
+// ── Modal ────────────────────────────────────────────────────────────────────
+function openCfg() {
+  document.getElementById('modal-bg').classList.add('open')
+  document.getElementById('cfg-btn').classList.add('active')
+}
+function closeCfg() {
+  document.getElementById('modal-bg').classList.remove('open')
+  document.getElementById('cfg-btn').classList.remove('active')
+}
+function closeCfgOutside(e) {
+  if (e.target === document.getElementById('modal-bg')) closeCfg()
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeCfg() })
+
+// ── Config ───────────────────────────────────────────────────────────────────
+async function loadCfg() {
+  const [cfg, clients] = await Promise.all([
+    fetch('/api/config').then(r => r.json()),
+    fetch('/api/clients').then(r => r.json()),
+  ])
+  const sel = document.getElementById('c-client')
+  sel.innerHTML = clients.map(c => `<option value="${c}">${c}</option>`).join('')
+  document.getElementById('c-min').value    = cfg.min_rate
+  document.getElementById('c-max').value    = cfg.max_rate
+  document.getElementById('c-sim').value    = cfg.simultaneous
+  document.getElementById('c-port').value   = cfg.port
+  document.getElementById('c-jitter').value = cfg.jitter
+  document.getElementById('c-proxy').value  = cfg.proxy || ''
+  sel.value = cfg.client
+  _maxRate  = cfg.max_rate
+  _maxRatio = cfg.max_ratio
+  const ratioEn = cfg.max_ratio > 0
+  document.getElementById('c-ratio-en').checked = ratioEn
+  document.getElementById('c-ratio').value = ratioEn ? cfg.max_ratio : 5
+  document.getElementById('ratio-num').style.display = ratioEn ? 'flex' : 'none'
+}
+
+function toggleRatio() {
+  const en = document.getElementById('c-ratio-en').checked
+  const el = document.getElementById('ratio-num')
+  el.style.display = en ? 'flex' : 'none'
+}
+
+async function saveCfg() {
+  const body = {
+    min_rate:     +document.getElementById('c-min').value,
+    max_rate:     +document.getElementById('c-max').value,
+    simultaneous: +document.getElementById('c-sim').value,
+    client:        document.getElementById('c-client').value,
+    port:         +document.getElementById('c-port').value,
+    jitter:       +document.getElementById('c-jitter').value,
+    proxy:         document.getElementById('c-proxy').value.trim(),
+    max_ratio:     document.getElementById('c-ratio-en').checked
+                     ? +document.getElementById('c-ratio').value
+                     : 0,
+  }
+  _maxRate  = body.max_rate
+  _maxRatio = body.max_ratio
+  const r = await fetch('/api/config', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+  if (!r.ok) { toast('Erreur lors de la sauvegarde', 't-err'); return }
+  const el = document.getElementById('saved')
+  el.classList.add('on')
+  setTimeout(() => el.classList.remove('on'), 2500)
+}
+
+// ── Upload ───────────────────────────────────────────────────────────────────
+async function upload(file) {
+  const fd = new FormData()
+  fd.append('file', file)
+  const r = await fetch('/api/torrents', { method: 'POST', body: fd })
+  const j = await r.json()
+  if (!r.ok) { toast('⚠ ' + j.error, 't-err'); return }
+  toast('🌱 Ajouté : ' + j.name)
+  poll()
+}
+
+document.getElementById('finput').addEventListener('change', e => {
+  ;[...e.target.files].forEach(upload)
+  e.target.value = ''
+})
+
+// drag anywhere
+let _dragCount = 0
+document.addEventListener('dragenter', e => {
+  if ([...e.dataTransfer.types].includes('Files')) {
+    _dragCount++
+    document.getElementById('drag-overlay').classList.add('show')
+  }
+})
+document.addEventListener('dragleave', () => {
+  _dragCount = Math.max(0, _dragCount - 1)
+  if (_dragCount === 0) document.getElementById('drag-overlay').classList.remove('show')
+})
+document.addEventListener('dragover', e => e.preventDefault())
+document.addEventListener('drop', e => {
+  e.preventDefault()
+  _dragCount = 0
+  document.getElementById('drag-overlay').classList.remove('show')
+  ;[...e.dataTransfer.files].filter(f => f.name.endsWith('.torrent')).forEach(upload)
+})
+
+// ── Actions ──────────────────────────────────────────────────────────────────
+async function del(id, name) {
+  if (!confirm(`Retirer "${name}" ?`)) return
+  await fetch('/api/torrents/' + id, { method: 'DELETE' })
+  toast('Retiré : ' + name)
+  poll()
+}
+async function pause(id)  { await fetch('/api/torrents/'+id+'/pause',  { method: 'POST' }); poll() }
+async function resume(id) { await fetch('/api/torrents/'+id+'/resume', { method: 'POST' }); poll() }
+
+// ── Render ───────────────────────────────────────────────────────────────────
+function badge(st, capped) {
+  if (capped) return `<span class="badge b-purple"><span class="badge-dot"></span>Limité</span>`
+  const map = {
+    seeding: ['b-green', 'Seeding'],
+    error:   ['b-red',   'Erreur'],
+    paused:  ['b-muted', 'Pausé'],
+    waiting: ['b-yellow','Attente'],
+  }
+  const [cls, lbl] = map[st] || map.waiting
+  return `<span class="badge ${cls}"><span class="badge-dot"></span>${lbl}</span>`
+}
+
+function render(list) {
+  document.getElementById('cnt').textContent = list.length
+  const el = document.getElementById('tlist')
+  if (!list.length) {
+    el.innerHTML = `
+      <div class="empty">
+        <div class="empty-icon">🌱</div>
+        <div class="empty-title">Aucun torrent actif</div>
+        <div class="empty-sub">Clique sur « Ajouter un torrent » ou glisse un .torrent ici</div>
+      </div>`
+    return
+  }
+  el.innerHTML = list.map(t => {
+    const pct = _maxRate > 0 ? Math.min(100, (t.speed / _maxRate) * 100) : 0
+    const isPaused = t.paused || t.status === 'paused'
+    const net = t.uploaded - (t.ratio_baseline || 0)
+    const ratio = t.size > 0 ? net / t.size : 0
+    const isCapped = _maxRatio > 0 && ratio >= _maxRatio
+    const ratioColor = isCapped ? 'c-red' : (_maxRatio > 0 && ratio >= _maxRatio * 0.85 ? 'c-yellow' : 'c-muted')
+    const ratioLbl = _maxRatio > 0 ? `<span class="lbl">/ ${_maxRatio}</span>` : ''
+    const trackerHost = (() => { try { return new URL(t.announce_url).hostname } catch(e) { return '' } })()
+    const secUntil = t.last_announce > 0 ? Math.round(t.last_announce + t.interval - Date.now() / 1000) : -1
+    const nextStr = secUntil < 0 ? '—' : secUntil <= 0 ? 'bientôt' : secUntil < 60 ? `${secUntil}s` : `${Math.round(secUntil / 60)}min`
+    return `
+    <div class="trow ${t.status}">
+      <div class="tcol-name">
+        <div class="tname" title="${esc(t.name)}">${esc(t.name)}</div>
+        <div class="tspeed-bar"><div class="tspeed-fill" style="width:${pct}%"></div></div>
+        ${t.error ? `<div class="terr">⚠ ${esc(t.error)}</div>` : ''}
+      </div>
+      <div class="tcol c-blue">${fmt.speed(t.speed)}<span class="lbl">${fmt.bytes(t.size)}</span></div>
+      <div class="tcol c-green">${fmt.bytes(t.uploaded)}<span class="lbl">/ ${fmt.bytes(t.size)}</span></div>
+      <div class="tcol ${ratioColor}">${ratio.toFixed(2)}${ratioLbl}</div>
+      <div class="tcol">${t.seeders}</div>
+      <div class="tcol c-yellow">${t.leechers}</div>
+      <div class="tcol c-muted">${fmt.ts(t.last_announce)}<span class="lbl">${trackerHost ? esc(trackerHost) + ' · ' : ''}${nextStr}</span></div>
+      <div class="tcol-actions">
+        ${badge(t.status, isCapped)}
+        ${isPaused
+          ? `<button class="abtn abtn-resume" onclick="resume('${t.id}')" title="Reprendre">▶</button>`
+          : `<button class="abtn abtn-pause"  onclick="pause('${t.id}')"  title="Pause">⏸</button>`}
+        <button class="abtn abtn-del" onclick="del('${t.id}','${esc(t.name)}')" title="Retirer">✕</button>
+      </div>
+    </div>`
+  }).join('')
+}
+
+// ── Poll ─────────────────────────────────────────────────────────────────────
+async function poll() {
+  const [list, stats] = await Promise.all([
+    fetch('/api/torrents').then(r => r.json()),
+    fetch('/api/stats').then(r => r.json()),
+  ])
+  render(list)
+  document.getElementById('st-speed').textContent  = fmt.speed(stats.speed)
+  document.getElementById('st-up').textContent     = fmt.bytes(stats.uploaded)
+  document.getElementById('st-active').textContent = stats.active
+  document.getElementById('st-total').textContent  = stats.total
+}
+
+loadCfg()
+poll()
+setInterval(poll, 1500)
+</script>
+</body>
+</html>
