@@ -217,6 +217,11 @@ config   = load_config()
 sessions = load_sessions()
 history  = load_history()
 indexers = load_indexers()
+
+# One-time migration: seed lifetime_uploaded from existing history
+if config.get('lifetime_uploaded', 0) == 0 and history:
+    config['lifetime_uploaded'] = sum(h.get('uploaded', 0) for h in history)
+    save_config(config)
 lock     = threading.RLock()
 executor = ThreadPoolExecutor(max_workers=20)
 ssl_ctx  = ssl.create_default_context()
